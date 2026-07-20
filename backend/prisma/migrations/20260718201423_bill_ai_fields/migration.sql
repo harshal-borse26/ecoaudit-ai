@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE `utilitybill` ADD COLUMN `billDate` DATETIME(3) NULL,
+    ADD COLUMN `carbonEmission` DOUBLE NULL DEFAULT 0,
+    ADD COLUMN `consumerName` VARCHAR(191) NULL,
+    ADD COLUMN `meterNumber` VARCHAR(191) NULL,
+    ADD COLUMN `status` VARCHAR(191) NOT NULL DEFAULT 'PENDING';

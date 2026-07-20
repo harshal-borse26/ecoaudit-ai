@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Company {
+  id          String   @id @default(uuid())
+  companyName String
+  industry    String
+  phone       String
+  country     String
+  state       String
+  city        String
+
+  users       User[]
+  facilities  Facility[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model User {
+  id        String   @id @default(uuid())
+  fullName  String
+  email     String   @unique
+  password  String
+  role      String   @default("ADMIN")
+
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Facility {
+  id          String   @id @default(uuid())
+  name        String
+  type        String
+  address     String
+  city        String
+  state       String
+  country     String
+  postalCode  String?
+
+  companyId   String
+  company     Company @relation(fields: [companyId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  bills       UtilityBill[]
+}
+
+model UtilityBill {
+  id             String      @id @default(uuid())
+
+  billFileUrl    String?
+
+  consumerName   String?
+  meterNumber    String?
+
+  billDate       DateTime?
+  billMonth      String?
+  billYear       Int?
+
+  totalAmount    Float?
+
+  status         BillStatus  @default(PENDING)
+
+  facilityId     String
+  facility       Facility     @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+
+  utilities      BillUtility[]
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model BillUtility {
+  id               String   @id @default(uuid())
+
+  utilityType      String
+  usage            Float
+  unit             String
+  amount           Float
+
+  carbonEmission   Float @default(0)
+
+  billId           String
+  bill             UtilityBill @relation(fields: [billId], references: [id], onDelete: Cascade)
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+enum BillStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
