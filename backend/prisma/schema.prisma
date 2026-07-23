@@ -59,6 +59,7 @@ model UtilityBill {
   id             String      @id @default(uuid())
 
   billFileUrl    String?
+  billFileKey    String?
   billType       String?
 
   consumerName   String?

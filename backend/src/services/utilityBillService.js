@@ -7,6 +7,7 @@ export const createBill = async (data, companyId) => {
     billMonth,
     billYear,
     billFileUrl,
+    billFileKey,
     billType,
     facilityId,
   } = data;
@@ -31,6 +32,7 @@ export const createBill = async (data, companyId) => {
   const bill = await prisma.utilityBill.create({
     data: {
       billFileUrl: billFileUrl || null,
+      billFileKey: billFileKey || null,
       billMonth,
       billYear: typeof billYear === "string" ? parseInt(billYear, 10) : billYear,
       billType: billType || "Electricity",
@@ -188,7 +190,8 @@ export const processBillAI = async (billId, companyId) => {
   });
 
   try {
-    const extractedData = await extractBillData(bill.billFileUrl);
+    const fileIdentifier = bill.billFileKey || bill.billFileUrl;
+    const extractedData = await extractBillData(fileIdentifier);
     console.log(JSON.stringify(extractedData, null, 2));
 
     const standardKeys = new Set([

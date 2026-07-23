@@ -1,14 +1,28 @@
-import { GoogleGenAI } from "@google/genai";
 import axios from "axios";
 import mime from "mime-types";
+import { generatePresignedUrl, getS3KeyFromUrl } from "./s3Service.js";
+import * as geminiProvider from "../providers/geminiProvider.js";
+import * as openRouterProvider from "../providers/openRouterProvider.js";
+import { classifyAiError } from "../utils/aiErrorClassifier.js";
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-});
+// Provider registry mapping
+const providers = {
+  gemini: geminiProvider,
+  openrouter: openRouterProvider,
+};
 
-// Download bill from S3/public URL
-const downloadBill = async (billFileUrl) => {
-  const response = await axios.get(billFileUrl, {
+// Download bill from S3 private bucket via presigned URL
+const downloadBill = async (billFileKeyOrUrl) => {
+  if (!billFileKeyOrUrl) {
+    throw new Error("No bill file key or URL provided for AI extraction.");
+  }
+
+  const key = getS3KeyFromUrl(billFileKeyOrUrl);
+  const signedUrl = await generatePresignedUrl(key, { mode: "preview", expiresIn: 900 });
+
+  console.log(`[AI Service] Generated S3 presigned URL for key: ${key}`);
+
+  const response = await axios.get(signedUrl, {
     responseType: "arraybuffer",
   });
 
@@ -16,21 +30,51 @@ const downloadBill = async (billFileUrl) => {
 };
 
 // Detect MIME type
-const getMimeType = (billFileUrl) => {
-  return mime.lookup(billFileUrl) || "application/pdf";
+const getMimeType = (billFileKeyOrUrl) => {
+  return mime.lookup(billFileKeyOrUrl) || "application/pdf";
 };
 
-// Main AI function
-export const extractBillData = async (billFileUrl) => {
-  try {
-    const fileBuffer = await downloadBill(billFileUrl);
-    console.log("Buffer Size:", fileBuffer.length);
-    console.log("Bill URL:", billFileUrl);
+// Normalizes and validates AI extracted JSON structure
+const validateAndNormalizeExtractedData = (data) => {
+  if (!data || typeof data !== "object") {
+    throw new Error("Extracted data is not a valid JSON object.");
+  }
 
-    const mimeType = getMimeType(billFileUrl);
-    console.log("Mime Type:", mimeType);
+  // Ensure aiExtractedData exists and is clean of junk null/undefined
+  let aiExtractedData = data.aiExtractedData || {};
+  if (typeof aiExtractedData !== "object" || aiExtractedData === null) {
+    aiExtractedData = {};
+  }
 
-    const prompt = `
+  // Filter out null/undefined/junk from aiExtractedData
+  const cleanAiExtractedData = {};
+  Object.entries(aiExtractedData).forEach(([k, v]) => {
+    if (v !== null && v !== undefined && String(v).trim().toLowerCase() !== "null" && String(v).trim().toLowerCase() !== "n/a") {
+      cleanAiExtractedData[k] = v;
+    }
+  });
+
+  return {
+    consumerName: data.consumerName || null,
+    meterNumber: data.meterNumber || null,
+    billDate: data.billDate || null,
+    billMonth: data.billMonth || null,
+    billYear: data.billYear || null,
+    billType: data.billType || null,
+    totalAmount: data.totalAmount != null ? Number(data.totalAmount) : null,
+    utilities: Array.isArray(data.utilities) ? data.utilities : [],
+    aiExtractedData: cleanAiExtractedData,
+  };
+};
+
+/**
+ * Main AI Bill Data Extraction service with Provider Failover Architecture.
+ */
+export const extractBillData = async (billFileKeyOrUrl) => {
+  const fileBuffer = await downloadBill(billFileKeyOrUrl);
+  const mimeType = getMimeType(billFileKeyOrUrl);
+
+  const prompt = `
 You are an expert enterprise utility bill parser and AI document intelligence system.
 
 Extract all details from the utility bill document and return ONLY a valid JSON object.
@@ -67,32 +111,44 @@ Return this JSON format:
 }
 `;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-flash-latest",
-      contents: [
-        {
-          text: prompt,
-        },
-        {
-          inlineData: {
-            mimeType,
-            data: fileBuffer.toString("base64"),
-          },
-        },
-      ],
-    });
+  // Determine provider execution order
+  const primaryProviderName = (process.env.AI_PRIMARY_PROVIDER || "gemini").toLowerCase();
+  const fallbackProviderName = (process.env.AI_FALLBACK_PROVIDER || "openrouter").toLowerCase();
 
-    const text = response.text
-      .replace(/```json/g, "")
-      .replace(/```/g, "")
-      .trim();
+  const providerChain = [primaryProviderName, fallbackProviderName].filter(
+    (name, index, self) => providers[name] && self.indexOf(name) === index
+  );
 
-    return JSON.parse(text);
-  } catch (error) {
+  let lastError = null;
 
-    console.error(error);
+  for (let i = 0; i < providerChain.length; i++) {
+    const providerName = providerChain[i];
+    const providerModule = providers[providerName];
 
-    throw error;
+    console.log(`[AI Failover Manager] Attempting provider (${i + 1}/${providerChain.length}): ${providerName.toUpperCase()}`);
 
-}
+    try {
+      const rawExtracted = await providerModule.extractBillFromBuffer({
+        fileBuffer,
+        mimeType,
+        prompt,
+      });
+
+      const normalized = validateAndNormalizeExtractedData(rawExtracted);
+      console.log(`[AI Failover Manager] Provider ${providerName.toUpperCase()} succeeded! Data extracted successfully.`);
+      return normalized;
+    } catch (err) {
+      lastError = err;
+      const classification = classifyAiError(err);
+      console.error(
+        `[AI Failover Manager] Provider ${providerName.toUpperCase()} failed. Reason: ${classification.reason}`
+      );
+
+      if (i < providerChain.length - 1) {
+        console.warn(`[AI Failover Manager] Triggering failover to next provider...`);
+      }
+    }
+  }
+
+  throw new Error(`All AI Providers failed extraction. Last error: ${lastError?.message || "Unknown failure"}`);
 };

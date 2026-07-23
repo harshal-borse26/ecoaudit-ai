@@ -58,7 +58,7 @@ const Bills = () => {
     billType: "Electricity",
     billMonth: MONTHS[new Date().getMonth()],
     billYear: new Date().getFullYear().toString(),
-    billFileUrl: "",
+    billFile: null,
   });
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
@@ -80,6 +80,8 @@ const Bills = () => {
   const [drawerBill, setDrawerBill] = useState(null);
   const [drawerLoading, setDrawerLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [downloadUrlLoading, setDownloadUrlLoading] = useState(false);
 
   // refs for polling
   const showDrawerRef = useRef(false);
@@ -153,7 +155,7 @@ const Bills = () => {
       billType: "Electricity",
       billMonth: MONTHS[new Date().getMonth()],
       billYear: new Date().getFullYear().toString(),
-      billFileUrl: "",
+      billFile: null,
     });
     setFormError("");
     setShowModal(true);
@@ -171,25 +173,31 @@ const Bills = () => {
       setFormError("Please select billing month and year.");
       return;
     }
-    if (!form.billFileUrl) {
-      setFormError("Please provide a valid bill document URL.");
+    if (!form.billFile) {
+      setFormError("Please select a bill document file to upload.");
       return;
     }
 
     setSubmitting(true);
     try {
-      const payload = {
-        facilityId: form.facilityId,
-        billType: form.billType,
-        billMonth: form.billMonth,
-        billYear: parseInt(form.billYear, 10),
-        billFileUrl: form.billFileUrl,
-      };
+      const formData = new FormData();
+      formData.append("facilityId", form.facilityId);
+      formData.append("billType", form.billType);
+      formData.append("billMonth", form.billMonth);
+      formData.append("billYear", form.billYear);
+      formData.append("billFile", form.billFile);
 
-      const res = await billService.create(payload);
+      const res = await billService.create(formData);
       if (res.data?.success) {
         setSuccessMsg("Document queued for processing! Trigger AI extraction to proceed.");
         setShowModal(false);
+        setForm({
+          facilityId: facilities.length > 0 ? facilities[0].id : "",
+          billType: "Electricity",
+          billMonth: MONTHS[new Date().getMonth()],
+          billYear: new Date().getFullYear().toString(),
+          billFile: null,
+        });
         fetchData();
         dispatchDataChanged();
         setTimeout(() => setSuccessMsg(""), 5000);
@@ -358,17 +366,43 @@ const Bills = () => {
     setDrawerLoading(true);
     setShowDrawer(true);
     setDrawerBill(null);
+    setPreviewUrl("");
     setActiveTab("overview");
     try {
-      const res = await billService.getById(id);
+      const [res, fileRes] = await Promise.all([
+        billService.getById(id),
+        billService.getFileUrl(id, "preview").catch(() => null),
+      ]);
       if (res.data?.success) {
         setDrawerBill(res.data.data);
+      }
+      if (fileRes?.data?.success) {
+        setPreviewUrl(fileRes.data.data.url);
       }
     } catch (err) {
       alert(err.response?.data?.message || "Failed to fetch document details.");
       setShowDrawer(false);
     } finally {
       setDrawerLoading(false);
+    }
+  };
+
+  const handleDownloadFile = async (billId) => {
+    try {
+      setDownloadUrlLoading(true);
+      const res = await billService.getFileUrl(billId, "download");
+      if (res.data?.success && res.data.data.url) {
+        const link = document.createElement("a");
+        link.href = res.data.data.url;
+        link.target = "_blank";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to generate presigned download URL.");
+    } finally {
+      setDownloadUrlLoading(false);
     }
   };
 
@@ -803,21 +837,33 @@ const Bills = () => {
                 {activeTab === "original" && (
                   <div>
                     <h5 className="fw-bold text-dark mb-3">Document Source Preview</h5>
-                    {drawerBill.billFileUrl ? (
+                    {(previewUrl || drawerBill.billFileUrl || drawerBill.billFileKey) ? (
                       <div>
                         <div className="p-2 border rounded bg-light text-center mb-3">
-                          <a href={drawerBill.billFileUrl} target="_blank" rel="noopener noreferrer" className="btn btn-outline-dark btn-sm me-2">
-                            Open in New Tab ↗
-                          </a>
-                          <a href={drawerBill.billFileUrl} download className="btn btn-outline-dark btn-sm">
-                            Download Document 📥
-                          </a>
+                          {previewUrl && (
+                            <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="btn btn-outline-dark btn-sm me-2">
+                              Open in New Tab ↗
+                            </a>
+                          )}
+                          <button
+                            className="btn btn-outline-dark btn-sm"
+                            onClick={() => handleDownloadFile(drawerBill.id)}
+                            disabled={downloadUrlLoading}
+                          >
+                            {downloadUrlLoading ? "Preparing Download..." : "Download Document 📥"}
+                          </button>
                         </div>
                         <div className="border rounded bg-light overflow-hidden" style={{ height: "360px" }}>
-                          {drawerBill.billFileUrl.toLowerCase().endsWith(".pdf") ? (
-                            <iframe src={drawerBill.billFileUrl} className="w-100 h-100" title="PDF Document Preview" />
+                          {previewUrl ? (
+                            (drawerBill.billFileKey || drawerBill.billFileUrl || "").toLowerCase().includes(".pdf") ? (
+                              <iframe src={previewUrl} className="w-100 h-100" title="PDF Document Preview" />
+                            ) : (
+                              <img src={previewUrl} alt="Bill Attachment Preview" className="w-100 h-auto object-fit-contain" style={{ maxHeight: "350px" }} />
+                            )
                           ) : (
-                            <img src={drawerBill.billFileUrl} alt="Bill Attachment Preview" className="w-100 h-auto object-fit-contain" style={{ maxHeight: "350px" }} />
+                            <div className="d-flex align-items-center justify-content-center h-100 text-muted">
+                              Loading secure presigned preview...
+                            </div>
                           )}
                         </div>
                       </div>
@@ -1022,17 +1068,21 @@ const Bills = () => {
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label fw-semibold">Bill Document URL *</label>
+                    <label className="form-label fw-semibold">Bill Document File *</label>
                     <input
-                      type="url"
+                      type="file"
                       className="form-control"
-                      name="billFileUrl"
-                      placeholder="https://example.com/bill.jpg"
-                      value={form.billFileUrl}
-                      onChange={handleFormChange}
+                      name="billFile"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          billFile: e.target.files[0] || null,
+                        })
+                      }
                       required
                     />
-                    <div className="form-text">Direct URL link to billing document image/file source.</div>
+                    <div className="form-text">Upload a utility bill document (PDF, JPG, JPEG, or PNG).</div>
                   </div>
                 </div>
 
