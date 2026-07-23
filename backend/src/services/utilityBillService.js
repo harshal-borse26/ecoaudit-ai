@@ -4,24 +4,15 @@ import { calculateCarbonEmission } from "./carbonService.js";
 
 export const createBill = async (data, companyId) => {
   const {
-    utilityType,
     billMonth,
     billYear,
-    amount,
-    units,
     billFileUrl,
+    billType,
     facilityId,
   } = data;
 
-  if (
-    !utilityType ||
-    !billMonth ||
-    !billYear ||
-    !amount ||
-    !units ||
-    !facilityId
-  ) {
-    throw new Error("All required fields are required");
+  if (!billMonth || !billYear || !facilityId) {
+    throw new Error("Facility, bill month, and bill year are required");
   }
 
   // Verify facility belongs to logged-in company
@@ -36,17 +27,23 @@ export const createBill = async (data, companyId) => {
     throw new Error("Facility not found");
   }
 
-  return await prisma.utilityBill.create({
+  // AI-first workflow: create bill with PENDING status.
+  const bill = await prisma.utilityBill.create({
     data: {
-      utilityType,
+      billFileUrl: billFileUrl || null,
       billMonth,
-      billYear,
-      amount,
-      units,
-      billFileUrl,
+      billYear: typeof billYear === "string" ? parseInt(billYear, 10) : billYear,
+      billType: billType || "Electricity",
       facilityId,
+      // status defaults to PENDING via Prisma schema
+    },
+    include: {
+      utilities: true,
+      facility: true,
     },
   });
+
+  return bill;
 };
 
 export const getBills = async (companyId) => {
@@ -58,6 +55,7 @@ export const getBills = async (companyId) => {
     },
     include: {
       facility: true,
+      utilities: true,
     },
     orderBy: {
       createdAt: "desc",
@@ -75,6 +73,7 @@ export const getBillById = async (id, companyId) => {
     },
     include: {
       facility: true,
+      utilities: true,
     },
   });
 
@@ -128,6 +127,39 @@ export const deleteBill = async (id, companyId) => {
   });
 };
 
+// Helper to safely parse date strings without returning Invalid Date objects
+const parseValidDate = (rawDate) => {
+  if (!rawDate) return null;
+
+  if (rawDate instanceof Date) {
+    return isNaN(rawDate.getTime()) ? null : rawDate;
+  }
+
+  const str = String(rawDate).trim();
+  if (!str) return null;
+
+  // Attempt standard JS Date parsing
+  let dateObj = new Date(str);
+
+  // If standard parsing produces Invalid Date, check DD-MM-YYYY or DD/MM/YYYY format
+  if (isNaN(dateObj.getTime())) {
+    const ddmmyyyyMatch = str.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+    if (ddmmyyyyMatch) {
+      const day = parseInt(ddmmyyyyMatch[1], 10);
+      const month = parseInt(ddmmyyyyMatch[2], 10) - 1;
+      const year = parseInt(ddmmyyyyMatch[3], 10);
+      dateObj = new Date(year, month, day);
+    }
+  }
+
+  // Ensure only valid Date objects are returned; otherwise null
+  if (dateObj instanceof Date && !isNaN(dateObj.getTime())) {
+    return dateObj;
+  }
+
+  return null;
+};
+
 export const processBillAI = async (billId, companyId) => {
   // Find the bill and verify ownership
   const bill = await prisma.utilityBill.findFirst({
@@ -155,66 +187,116 @@ export const processBillAI = async (billId, companyId) => {
     },
   });
 
-  const extractedData = await extractBillData(bill.billFileUrl);
-  console.log(JSON.stringify(extractedData, null, 2));
-  console.log(extractedData);
-  const carbonEmission = calculateCarbonEmission(
-    extractedData.utilityType,
-    extractedData.units,
-  );
+  try {
+    const extractedData = await extractBillData(bill.billFileUrl);
+    console.log(JSON.stringify(extractedData, null, 2));
 
-  const updatedBill = await prisma.utilityBill.update({
-    where: {
-      id: billId,
-    },
-    data: {
-      consumerName: extractedData.consumerName,
-      meterNumber: extractedData.meterNumber,
-      billDate: extractedData.billDate
-        ? new Date(extractedData.billDate)
-        : null,
-      billMonth: extractedData.billMonth,
-      billYear: extractedData.billYear,
-      totalAmount: extractedData.totalAmount,
-      status: "COMPLETED",
-    },
-  });
+    const standardKeys = new Set([
+      "consumerName",
+      "meterNumber",
+      "billDate",
+      "billMonth",
+      "billYear",
+      "billType",
+      "totalAmount",
+      "utilities",
+      "aiExtractedData"
+    ]);
 
-  await prisma.billUtility.deleteMany({
-  where: {
-    billId,
-  },
-});
+    let aiExtractedData = extractedData.aiExtractedData || {};
+    if (typeof aiExtractedData !== "object" || aiExtractedData === null) {
+      aiExtractedData = {};
+    }
 
-for (const utility of extractedData.utilities) {
+    // Preserve original raw billDate in aiExtractedData
+    if (extractedData.billDate != null && extractedData.billDate !== "") {
+      aiExtractedData.billDate = extractedData.billDate;
+    }
 
-  const carbonEmission = calculateCarbonEmission(
-    utility.type,
-    utility.usage,
-    utility.unit
-  );
+    // Also pick up any additional non-standard key-values from top level if present
+    Object.keys(extractedData || {}).forEach((key) => {
+      if (!standardKeys.has(key) && extractedData[key] !== null && extractedData[key] !== undefined) {
+        aiExtractedData[key] = extractedData[key];
+      }
+    });
 
-  await prisma.billUtility.create({
-    data: {
-      utilityType: utility.type,
-      usage: utility.usage,
-      unit: utility.unit,
-      amount: utility.amount,
-      carbonEmission,
-      billId,
-    },
-  });
+    const billType = extractedData.billType || bill.billType || (extractedData.utilities?.[0]?.type) || "Electricity";
+    const parsedBillDate = parseValidDate(extractedData.billDate);
 
-}
+    const updatedBill = await prisma.utilityBill.update({
+      where: {
+        id: billId,
+      },
+      data: {
+        consumerName: extractedData.consumerName || null,
+        meterNumber: extractedData.meterNumber || null,
+        billDate: parsedBillDate,
+        billMonth: extractedData.billMonth || bill.billMonth,
+        billYear: Number.isInteger(Number(extractedData.billYear)) && Number(extractedData.billYear) > 1900
+          ? Number(extractedData.billYear)
+          : bill.billYear,
+        billType: billType,
+        totalAmount: (extractedData.totalAmount != null && !isNaN(Number(extractedData.totalAmount)))
+          ? Number(extractedData.totalAmount)
+          : null,
+        aiExtractedData: aiExtractedData,
+        status: "COMPLETED",
+      },
+    });
 
- const finalBill = await prisma.utilityBill.findUnique({
-  where: {
-    id: billId,
-  },
-  include: {
-    utilities: true,
-  },
-});
+    await prisma.billUtility.deleteMany({
+      where: {
+        billId,
+      },
+    });
 
-return finalBill;
+    const utilitiesList = Array.isArray(extractedData.utilities) ? extractedData.utilities : [];
+
+    for (const utility of utilitiesList) {
+      const uType = utility.type || "Electricity";
+      const uUsage = !isNaN(Number(utility.usage)) ? Number(utility.usage) : 0;
+      const uUnit = utility.unit || "kWh";
+      const uAmount = !isNaN(Number(utility.amount)) ? Number(utility.amount) : 0;
+
+      const carbonEmission = calculateCarbonEmission(
+        uType,
+        uUsage,
+        uUnit
+      );
+
+      await prisma.billUtility.create({
+        data: {
+          utilityType: uType,
+          usage: uUsage,
+          unit: uUnit,
+          amount: uAmount,
+          carbonEmission,
+          billId,
+        },
+      });
+    }
+
+    const finalBill = await prisma.utilityBill.findUnique({
+      where: {
+        id: billId,
+      },
+      include: {
+        utilities: true,
+        facility: true,
+      },
+    });
+
+    return finalBill;
+  } catch (error) {
+    // Set bill status to FAILED so frontend polling can detect it
+    await prisma.utilityBill.update({
+      where: {
+        id: billId,
+      },
+      data: {
+        status: "FAILED",
+      },
+    });
+    throw error;
+  }
 };

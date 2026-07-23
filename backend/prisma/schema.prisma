@@ -59,6 +59,7 @@ model UtilityBill {
   id             String      @id @default(uuid())
 
   billFileUrl    String?
+  billType       String?
 
   consumerName   String?
   meterNumber    String?
@@ -68,6 +69,8 @@ model UtilityBill {
   billYear       Int?
 
   totalAmount    Float?
+
+  aiExtractedData Json?
 
   status         BillStatus  @default(PENDING)
 

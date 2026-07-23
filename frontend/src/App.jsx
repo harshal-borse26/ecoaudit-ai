@@ -1,10 +1,35 @@
-function App() {
+import React from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import ProtectedRoute from "./components/ProtectedRoute";
+import MainLayout from "./layouts/MainLayout";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import Dashboard from "./pages/Dashboard";
+import Facilities from "./pages/Facilities";
+import Bills from "./pages/Bills";
+import Reports from "./pages/Reports";
+
+const App = () => {
   return (
-    <div>
-      <h1>EcoAudit AI</h1>
-      <p>AI-Powered Utility & Carbon Management Platform</p>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+
+        <Route element={<ProtectedRoute />}>
+          <Route element={<MainLayout />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/facilities" element={<Facilities />} />
+            <Route path="/bills" element={<Bills />} />
+            <Route path="/reports" element={<Reports />} />
+          </Route>
+        </Route>
+
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+    </BrowserRouter>
   );
-}
+};
 
 export default App;

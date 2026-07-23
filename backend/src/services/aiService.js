@@ -25,40 +25,45 @@ export const extractBillData = async (billFileUrl) => {
   try {
     const fileBuffer = await downloadBill(billFileUrl);
     console.log("Buffer Size:", fileBuffer.length);
+    console.log("Bill URL:", billFileUrl);
 
     const mimeType = getMimeType(billFileUrl);
     console.log("Mime Type:", mimeType);
 
     const prompt = `
-You are an expert utility bill parser.
+You are an expert enterprise utility bill parser and AI document intelligence system.
 
-Extract the bill details and return ONLY valid JSON.
+Extract all details from the utility bill document and return ONLY a valid JSON object.
 
 Rules:
-- Do not include markdown.
-- Do not include explanation.
-- Return null if a value is missing.
-- If the bill contains multiple utility services, return all of them in the "utilities" array.
-- For usage, return only the numeric value.
-- Keep the measurement unit separately.
+- Do not include markdown formatting or explanations. Return valid JSON only.
+- Return null if a top-level field is not found in the bill.
+- "billType": Primary type of bill (e.g. "Electricity", "Water", "Natural Gas", "Diesel", "Dual Utility").
+- "utilities": Array of utility services extracted: [ { "type": "Electricity/Water/Gas", "usage": numeric_value, "unit": "kWh/KL/L/Gallons/Therms", "amount": numeric_value } ].
+- "aiExtractedData": Object containing ALL additional metadata key-value pairs present on the bill (e.g. billingDays, sanctionLoad, currentReading, previousReading, energyCharge, fixedCharge, customerCategory, taxAmount, supplyType, tariffCategory, invoiceNumber, accountNumber, connectedLoad, penaltyAmount, discountAmount, dueDays, etc.).
+- ONLY include keys inside "aiExtractedData" that ACTUALLY exist in the document with non-null meaningful values. Do not invent or include null/N/A values.
 
 Return this JSON format:
-
 {
-  "consumerName": "",
-  "meterNumber": "",
-  "billDate": "",
-  "billMonth": "",
-  "billYear": 0,
-  "totalAmount": 0,
+  "consumerName": null,
+  "meterNumber": null,
+  "billDate": null,
+  "billMonth": null,
+  "billYear": null,
+  "billType": null,
+  "totalAmount": null,
   "utilities": [
     {
-      "type": "",
+      "type": "Electricity",
       "usage": 0,
-      "unit": "",
+      "unit": "kWh",
       "amount": 0
     }
-  ]
+  ],
+  "aiExtractedData": {
+    "billingDays": 30,
+    "customerCategory": "Commercial"
+  }
 }
 `;
 
@@ -84,7 +89,10 @@ Return this JSON format:
 
     return JSON.parse(text);
   } catch (error) {
-    console.error("AI Error:", error);
-    throw new Error("Failed to process bill with AI");
-  }
+
+    console.error(error);
+
+    throw error;
+
+}
 };
