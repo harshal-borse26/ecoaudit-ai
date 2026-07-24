@@ -167,13 +167,56 @@ export const getCurrentUser = async (userId) => {
     fullName: user.fullName,
     email: user.email,
     role: user.role,
-    company: {
+    company: user.company ? {
       id: user.company.id,
       companyName: user.company.companyName,
       industry: user.company.industry,
       city: user.company.city,
       state: user.company.state,
       country: user.company.country,
-    },
+    } : null,
   };
+};
+
+export const changeUserPassword = async (userId, data) => {
+  const { currentPassword, newPassword, confirmPassword } = data;
+
+  if (!currentPassword || !newPassword || !confirmPassword) {
+    throw new Error("All password fields are required");
+  }
+
+  if (newPassword !== confirmPassword) {
+    throw new Error("New password and confirm password do not match");
+  }
+
+  if (newPassword.length < 8) {
+    throw new Error("New password must be at least 8 characters long");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+  if (!isCurrentPasswordValid) {
+    throw new Error("Current password is incorrect");
+  }
+
+  const isSamePassword = await bcrypt.compare(newPassword, user.password);
+  if (isSamePassword) {
+    throw new Error("New password must be different from current password");
+  }
+
+  const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { password: hashedNewPassword },
+  });
+
+  return { message: "Password updated successfully" };
 };

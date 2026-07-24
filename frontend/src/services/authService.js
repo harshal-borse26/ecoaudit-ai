@@ -5,4 +5,5 @@ export const authService = {
   login: (data) => api.post("/auth/login", data),
   getMe: () => api.get("/auth/me"),
   getProfile: () => api.get("/auth/profile"),
+  changePassword: (data) => api.put("/auth/change-password", data),
 };

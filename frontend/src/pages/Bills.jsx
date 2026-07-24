@@ -2,6 +2,27 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { billService } from "../services/billService";
 import { facilityService } from "../services/facilityService";
 import { formatCurrency, formatDate, getStatusBadgeClass } from "../utils/helpers";
+import { 
+  FileText, 
+  Upload, 
+  RefreshCw, 
+  Search, 
+  Filter, 
+  CheckCircle2, 
+  Clock, 
+  AlertTriangle, 
+  Sparkles, 
+  Eye, 
+  Download, 
+  Trash2, 
+  Edit3, 
+  Zap, 
+  Building2, 
+  ShieldCheck, 
+  ArrowRight,
+  X,
+  FileCode
+} from "lucide-react";
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -12,24 +33,6 @@ const BILL_TYPES = ["Electricity", "Water", "Natural Gas", "Diesel", "Dual Utili
 
 const dispatchDataChanged = () => {
   window.dispatchEvent(new CustomEvent("ecoaudit-data-changed"));
-};
-
-const formatKeyLabel = (key) => {
-  if (!key) return "";
-  return key
-    .replace(/([A-Z])/g, " $1")
-    .replace(/_/g, " ")
-    .replace(/^./, (str) => str.toUpperCase())
-    .trim();
-};
-
-const isValidValue = (val) => {
-  if (val === null || val === undefined) return false;
-  if (typeof val === "string") {
-    const trimmed = val.trim().toLowerCase();
-    if (trimmed === "" || trimmed === "n/a" || trimmed === "null" || trimmed === "undefined") return false;
-  }
-  return true;
 };
 
 const Bills = () => {
@@ -145,10 +148,6 @@ const Bills = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleEditFormChange = (e) => {
-    setEditForm({ ...editForm, [e.target.name]: e.target.value });
-  };
-
   const openCreateModal = () => {
     setForm({
       facilityId: facilities.length > 0 ? facilities[0].id : "",
@@ -200,247 +199,109 @@ const Bills = () => {
         });
         fetchData();
         dispatchDataChanged();
-        setTimeout(() => setSuccessMsg(""), 5000);
+        setTimeout(() => setSuccessMsg(""), 4000);
+      } else {
+        setFormError(res.data?.message || "Failed to upload utility bill document.");
       }
     } catch (err) {
-      setFormError(err.response?.data?.message || "Failed to enqueue utility bill document.");
+      setFormError(err.response?.data?.message || "Error uploading file.");
     } finally {
       setSubmitting(false);
     }
   };
 
-  const openEditModal = (bill) => {
-    setEditForm({
-      facilityId: bill.facilityId || "",
-      billType: bill.billType || "Electricity",
-      billMonth: bill.billMonth || "",
-      billYear: bill.billYear?.toString() || "",
-      billFileUrl: bill.billFileUrl || "",
-    });
-    setEditBillId(bill.id);
-    setEditFormError("");
-    setShowEditModal(true);
-  };
-
-  const handleEditSubmit = async (e) => {
-    e.preventDefault();
-    setEditFormError("");
-
-    if (!editForm.facilityId) {
-      setEditFormError("Please select a facility.");
-      return;
-    }
-
-    setEditSubmitting(true);
-    try {
-      const payload = {
-        facilityId: editForm.facilityId,
-        billType: editForm.billType,
-        billMonth: editForm.billMonth,
-        billYear: parseInt(editForm.billYear, 10),
-        billFileUrl: editForm.billFileUrl || null,
-      };
-
-      const res = await billService.update(editBillId, payload);
-      if (res.data?.success) {
-        setSuccessMsg("Bill document details updated successfully.");
-        setShowEditModal(false);
-        fetchData();
-        dispatchDataChanged();
-        setTimeout(() => setSuccessMsg(""), 4000);
-        // Refresh drawer details if open
-        if (drawerBill && drawerBill.id === editBillId) {
-          handleViewDetails(editBillId);
-        }
-      }
-    } catch (err) {
-      setEditFormError(err.response?.data?.message || "Failed to update bill record.");
-    } finally {
-      setEditSubmitting(false);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this bill document from the queue?")) return;
-    try {
-      stopPolling(id);
-      await billService.delete(id);
-      setSuccessMsg("Bill record deleted successfully.");
-      setShowDrawer(false);
-      setDrawerBill(null);
-      fetchData();
-      dispatchDataChanged();
-      setTimeout(() => setSuccessMsg(""), 4000);
-    } catch (err) {
-      alert(err.response?.data?.message || "Failed to delete bill.");
-    }
-  };
-
-  const stopPolling = (billId) => {
-    if (pollingTimers.current[billId]) {
-      clearInterval(pollingTimers.current[billId]);
-      delete pollingTimers.current[billId];
-    }
-    setProcessingIds((prev) => {
-      const next = new Set(prev);
-      next.delete(billId);
-      return next;
-    });
-  };
-
   const startPolling = (billId) => {
-    let pollCount = 0;
-    const maxPolls = 60;
+    if (pollingTimers.current[billId]) return;
 
     const timer = setInterval(async () => {
-      pollCount++;
-
       try {
         const res = await billService.getById(billId);
-        if (!res.data?.success) return;
+        if (res.data?.success) {
+          const updated = res.data.data;
+          if (updated.status !== "PROCESSING") {
+            clearInterval(pollingTimers.current[billId]);
+            delete pollingTimers.current[billId];
+            setProcessingIds((prev) => {
+              const next = new Set(prev);
+              next.delete(billId);
+              return next;
+            });
+            fetchData();
+            dispatchDataChanged();
 
-        const bill = res.data.data;
-
-        if (bill.status === "COMPLETED") {
-          stopPolling(billId);
-          setSuccessMsg("🤖 Gemini AI Vision extraction completed! Extracted metadata & carbon emissions updated.");
-          fetchData();
-          dispatchDataChanged();
-          setTimeout(() => setSuccessMsg(""), 6000);
-
-          if (showDrawerRef.current && drawerBillRef.current?.id === billId) {
-            setDrawerBill(bill);
+            if (showDrawerRef.current && drawerBillRef.current && drawerBillRef.current.id === billId) {
+              setDrawerBill(updated);
+            }
           }
-          return;
         }
-
-        if (bill.status === "FAILED") {
-          stopPolling(billId);
-          setError(`AI Extraction failed for bill. Please verify image URL and retry.`);
-          fetchData();
-          dispatchDataChanged();
-          setTimeout(() => setError(""), 8000);
-
-          if (showDrawerRef.current && drawerBillRef.current?.id === billId) {
-            setDrawerBill(bill);
-          }
-          return;
-        }
-
-        setBills((prev) =>
-          prev.map((b) => (b.id === billId ? { ...b, status: "PROCESSING" } : b))
-        );
-      } catch (err) {
-        // Silent retry
+      } catch {
+        // continue polling
       }
-
-      if (pollCount >= maxPolls) {
-        stopPolling(billId);
-        setError("AI Processing timed out. Check backend connection.");
-        fetchData();
-        setTimeout(() => setError(""), 8000);
-      }
-    }, 2000);
+    }, 3000);
 
     pollingTimers.current[billId] = timer;
   };
 
-  const handleProcessAI = async (id) => {
-    setError("");
-    setProcessingIds((prev) => new Set(prev).add(id));
-    setBills((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, status: "PROCESSING" } : b))
-    );
-
+  const handleProcessBill = async (id) => {
     try {
-      await billService.process(id);
-      startPolling(id);
+      setProcessingIds((prev) => new Set(prev).add(id));
+      setBills((prev) =>
+        prev.map((b) => (b.id === id ? { ...b, status: "PROCESSING" } : b))
+      );
+
+      const res = await billService.process(id);
+      if (res.data?.success) {
+        startPolling(id);
+      }
     } catch (err) {
-      stopPolling(id);
-      alert(err.response?.data?.message || "AI Bill Processing failed.");
+      setProcessingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      alert(err.response?.data?.message || "Failed to trigger AI processing.");
       fetchData();
     }
   };
 
-  const handleViewDetails = async (id) => {
-    setDrawerLoading(true);
+  const openDrawer = async (billId) => {
     setShowDrawer(true);
-    setDrawerBill(null);
-    setPreviewUrl("");
+    setDrawerLoading(true);
     setActiveTab("overview");
+    setPreviewUrl("");
+
     try {
-      const [res, fileRes] = await Promise.all([
-        billService.getById(id),
-        billService.getFileUrl(id, "preview").catch(() => null),
-      ]);
+      const res = await billService.getById(billId);
       if (res.data?.success) {
-        setDrawerBill(res.data.data);
-      }
-      if (fileRes?.data?.success) {
-        setPreviewUrl(fileRes.data.data.url);
+        const bData = res.data.data;
+        setDrawerBill(bData);
+
+        try {
+          const pRes = await billService.getPreviewUrl(billId);
+          if (pRes.data?.success) {
+            setPreviewUrl(pRes.data.data.url);
+          }
+        } catch {
+          setPreviewUrl(bData.billFileUrl || "");
+        }
       }
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to fetch document details.");
-      setShowDrawer(false);
+      alert(err.response?.data?.message || "Failed to load document details.");
     } finally {
       setDrawerLoading(false);
     }
   };
 
-  const handleDownloadFile = async (billId) => {
-    try {
-      setDownloadUrlLoading(true);
-      const res = await billService.getFileUrl(billId, "download");
-      if (res.data?.success && res.data.data.url) {
-        const link = document.createElement("a");
-        link.href = res.data.data.url;
-        link.target = "_blank";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
-    } catch (err) {
-      alert(err.response?.data?.message || "Failed to generate presigned download URL.");
-    } finally {
-      setDownloadUrlLoading(false);
-    }
-  };
-
-  const handleDownloadJSON = (bill) => {
-    const exportData = {
-      documentId: bill.id,
-      facility: bill.facility?.name,
-      billType: bill.billType,
-      billingPeriod: `${bill.billMonth || ""} ${bill.billYear || ""}`.trim(),
-      status: bill.status,
-      consumerName: bill.consumerName,
-      meterNumber: bill.meterNumber,
-      billDate: bill.billDate,
-      totalAmount: bill.totalAmount,
-      aiExtractedData: bill.aiExtractedData || {},
-      utilities: bill.utilities || [],
-      extractedAt: bill.updatedAt,
-    };
-
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `ecoaudit-ai-extraction-${bill.id.slice(0, 8)}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+  const closeDrawer = () => {
+    setShowDrawer(false);
+    setDrawerBill(null);
+    setPreviewUrl("");
   };
 
   const getBillCarbon = (bill) => {
     if (!bill.utilities || bill.utilities.length === 0) return 0;
     return bill.utilities.reduce((sum, u) => sum + (u.carbonEmission || 0), 0);
   };
-
-  const availableYears = useMemo(() => {
-    return Array.from(new Set(bills.map((b) => b.billYear).filter(Boolean))).sort((a, b) => b - a);
-  }, [bills]);
 
   // Derived filter queue logic
   const filteredBills = useMemo(() => {
@@ -491,143 +352,174 @@ const Bills = () => {
   const failedCount = bills.filter(b => b.status === "FAILED").length;
 
   return (
-    <div className="document-processing-workspace pb-5">
-      {/* Page Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div className="space-y-8">
+      {/* HEADER SECTION */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 pb-6 border-b border-[#E2E8F0]">
         <div>
-          <h2 className="fw-bold text-dark mb-1" style={{ letterSpacing: "-0.03em" }}>Document Processing Center</h2>
-          <p className="text-muted small mb-0">Manage uploaded utility bills, AI extraction results and carbon analysis.</p>
+          <h1 className="text-3xl font-extrabold text-[#1E293B] tracking-tight">AI Document Processing Queue</h1>
+          <p className="text-sm font-medium text-[#64748B] mt-1">Manage uploaded utility bills, AI extraction results and carbon analysis.</p>
         </div>
-        <div className="d-flex gap-2">
-          <button className="btn btn-secondary-white btn-sm" onClick={fetchData}>
-            Refresh
+        <div className="flex items-center gap-4">
+          <button 
+            className="px-4 py-2.5 bg-white border border-[#E2E8F0] text-[#1E293B] font-bold text-xs rounded-2xl hover:bg-[#F8FAFC] transition-colors flex items-center gap-2 shadow-xs cursor-pointer" 
+            onClick={fetchData}
+          >
+            <RefreshCw className="w-4 h-4" />
+            <span>Refresh</span>
           </button>
-          <button className="btn btn-lime shadow-sm" onClick={openCreateModal}>
-            Upload Utility Bill
+          <button 
+            className="px-5 py-2.5 bg-[#2E7D32] text-white font-extrabold text-xs rounded-2xl shadow-md shadow-[#2E7D32]/25 hover:bg-[#256829] transition-colors flex items-center gap-2 cursor-pointer" 
+            onClick={openCreateModal}
+          >
+            <Upload className="w-4 h-4" />
+            <span>Upload Utility Bill</span>
           </button>
         </div>
       </div>
 
-      {error && <div className="alert alert-danger mb-4 rounded-3">{error}</div>}
-      {successMsg && <div className="alert alert-success mb-4 rounded-3">{successMsg}</div>}
+      {error && (
+        <div className="p-5 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-sm font-semibold flex items-center gap-3">
+          <AlertTriangle className="w-5 h-5 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+      {successMsg && (
+        <div className="p-5 rounded-2xl bg-emerald-50 border border-emerald-200 text-[#2E7D32] text-sm font-semibold flex items-center gap-3">
+          <CheckCircle2 className="w-5 h-5 shrink-0" />
+          <span>{successMsg}</span>
+        </div>
+      )}
 
-      {/* Queue Status Strip Container */}
-      <div className="dashboard-section">
-        <div className="card-saas bg-white" style={{ padding: "18px 32px" }}>
-          <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
-            <span className="fw-bold text-dark" style={{ fontSize: "0.95rem" }}>Queue Status</span>
-            <div className="d-flex align-items-center gap-5">
-              <div className="text-center">
-                <span className="text-muted d-block small mb-1" style={{ fontSize: "0.72rem" }}>Processed</span>
-                <span className="fw-bold text-success fs-5">● {completedCount}</span>
-              </div>
-              <div className="text-center border-start ps-4">
-                <span className="text-muted d-block small mb-1" style={{ fontSize: "0.72rem" }}>Pending</span>
-                <span className="fw-bold text-warning fs-5">● {pendingCount}</span>
-              </div>
-              <div className="text-center border-start ps-4">
-                <span className="text-muted d-block small mb-1" style={{ fontSize: "0.72rem" }}>Processing</span>
-                <span className="fw-bold text-primary fs-5">● {processingCount}</span>
-              </div>
-              <div className="text-center border-start ps-4">
-                <span className="text-muted d-block small mb-1" style={{ fontSize: "0.72rem" }}>Failed</span>
-                <span className="fw-bold text-danger fs-5">● {failedCount}</span>
-              </div>
-            </div>
+      {/* QUEUE STATUS STRIP CONTAINER */}
+      <div className="bg-white border border-[#E2E8F0] rounded-3xl p-6 shadow-xs flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-[#E7F3E8] text-[#2E7D32] flex items-center justify-center shrink-0">
+            <ShieldCheck className="w-6 h-6" />
+          </div>
+          <div>
+            <span className="text-sm font-extrabold text-[#1E293B]">Google Gemini OCR Processing Status</span>
+            <p className="text-xs font-medium text-[#64748B] mt-1">Automated document parsing & field verification</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-4 gap-4 text-center w-full md:w-auto">
+          <div className="px-5 py-2.5 bg-[#F8FAFC] rounded-2xl border border-[#E2E8F0]">
+            <span className="text-xs font-bold text-[#64748B] uppercase block">Processed</span>
+            <span className="text-base font-extrabold text-[#2E7D32]">● {completedCount}</span>
+          </div>
+          <div className="px-5 py-2.5 bg-[#F8FAFC] rounded-2xl border border-[#E2E8F0]">
+            <span className="text-xs font-bold text-[#64748B] uppercase block">Pending</span>
+            <span className="text-base font-extrabold text-amber-600">● {pendingCount}</span>
+          </div>
+          <div className="px-5 py-2.5 bg-[#F8FAFC] rounded-2xl border border-[#E2E8F0]">
+            <span className="text-xs font-bold text-[#64748B] uppercase block">Processing</span>
+            <span className="text-base font-extrabold text-[#1565C0]">● {processingCount}</span>
+          </div>
+          <div className="px-5 py-2.5 bg-[#F8FAFC] rounded-2xl border border-[#E2E8F0]">
+            <span className="text-xs font-bold text-[#64748B] uppercase block">Failed</span>
+            <span className="text-base font-extrabold text-red-600">● {failedCount}</span>
           </div>
         </div>
       </div>
 
-      {/* Filter bar Row */}
-      <div className="dashboard-section">
-        <div className="card-saas bg-white p-3">
-          <div className="row g-2 align-items-center">
-            {/* Search */}
-            <div className="col-md-3">
-              <input
-                type="text"
-                className="form-control bg-light border-0"
-                placeholder="🔍 Search documents, consumer..."
-                value={search}
-                onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-              />
+      {/* SEARCH & FILTERS BAR */}
+      <div className="bg-white border border-[#E2E8F0] rounded-3xl p-5 shadow-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+          {/* Search */}
+          <div className="relative md:col-span-2">
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#94A3B8]">
+              <Search className="w-5 h-5" />
             </div>
+            <input
+              type="text"
+              placeholder="Search documents, consumer, meter..."
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+              className="w-full h-11 pl-11 pr-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl text-sm font-medium text-[#1E293B] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#2E7D32] focus:ring-2 focus:ring-[#2E7D32]/20"
+            />
+          </div>
 
-            {/* Facility */}
-            <div className="col-md-3">
-              <select className="form-select bg-light border-0" value={facilityFilter} onChange={(e) => { setFacilityFilter(e.target.value); setCurrentPage(1); }}>
-                <option value="ALL">All Facilities</option>
-                {facilities.map((f) => (
-                  <option key={f.id} value={f.id}>{f.name}</option>
-                ))}
-              </select>
-            </div>
+          {/* Facility */}
+          <div>
+            <select 
+              value={facilityFilter} 
+              onChange={(e) => { setFacilityFilter(e.target.value); setCurrentPage(1); }}
+              className="w-full h-11 px-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl text-sm font-bold text-[#1E293B] focus:outline-none focus:border-[#2E7D32]"
+            >
+              <option value="ALL">All Facilities</option>
+              {facilities.map((f) => (
+                <option key={f.id} value={f.id}>{f.name}</option>
+              ))}
+            </select>
+          </div>
 
-            {/* Bill Type */}
-            <div className="col-md-2">
-              <select className="form-select bg-light border-0" value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setCurrentPage(1); }}>
-                <option value="ALL">All Utilities</option>
-                {BILL_TYPES.map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
-            </div>
+          {/* Bill Type */}
+          <div>
+            <select 
+              value={typeFilter} 
+              onChange={(e) => { setTypeFilter(e.target.value); setCurrentPage(1); }}
+              className="w-full h-11 px-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl text-sm font-bold text-[#1E293B] focus:outline-none focus:border-[#2E7D32]"
+            >
+              <option value="ALL">All Utilities</option>
+              {BILL_TYPES.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </div>
 
-            {/* Status */}
-            <div className="col-md-2">
-              <select className="form-select bg-light border-0" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}>
-                <option value="ALL">All Statuses</option>
-                <option value="PENDING">PENDING</option>
-                <option value="PROCESSING">PROCESSING</option>
-                <option value="COMPLETED">COMPLETED</option>
-                <option value="FAILED">FAILED</option>
-              </select>
-            </div>
-
-            {/* Reset */}
-            <div className="col-md-2">
-              <button className="btn btn-secondary-white btn-sm w-100 py-2" onClick={resetFilters}>
-                Reset Filters
-              </button>
-            </div>
+          {/* Status */}
+          <div>
+            <select 
+              value={statusFilter} 
+              onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+              className="w-full h-11 px-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl text-sm font-bold text-[#1E293B] focus:outline-none focus:border-[#2E7D32]"
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="PENDING">PENDING</option>
+              <option value="PROCESSING">PROCESSING</option>
+              <option value="COMPLETED">COMPLETED</option>
+              <option value="FAILED">FAILED</option>
+            </select>
           </div>
         </div>
       </div>
 
-      {/* Document Stacked Cards List */}
+      {/* DOCUMENT CARDS LIST (Spacious, prominent numbers, highly readable) */}
       {loading ? (
-        <div className="text-center py-5">
-          <div className="spinner-border text-success" role="status" />
-          <p className="text-muted small mt-2">Syncing utility bill processing queue...</p>
+        <div className="flex flex-col items-center justify-center min-h-[40vh] py-12 text-[#64748B]">
+          <RefreshCw className="w-8 h-8 animate-spin text-[#2E7D32] mb-3" />
+          <p className="text-base font-bold">Syncing utility bill document queue...</p>
         </div>
       ) : paginatedBills.length === 0 ? (
-        <div className="card-saas bg-white p-5 text-center text-muted">
-          <span className="fs-1 mb-2 d-block">📥</span>
-          <h5 className="fw-bold text-dark">No utility bills uploaded yet.</h5>
-          <p className="small mb-3">Upload your first utility bill to begin AI-powered carbon analysis.</p>
-          <button className="btn btn-lime shadow-sm px-4" onClick={openCreateModal}>
+        <div className="bg-white border border-[#E2E8F0] rounded-3xl p-12 text-center space-y-4">
+          <FileText className="w-12 h-12 text-[#94A3B8] mx-auto" />
+          <h3 className="text-base font-extrabold text-[#1E293B]">No utility bills uploaded yet.</h3>
+          <p className="text-sm font-medium text-[#64748B] max-w-md mx-auto">Upload your first utility bill document to begin AI-powered extraction and carbon accounting.</p>
+          <button 
+            onClick={openCreateModal}
+            className="px-5 py-2.5 bg-[#2E7D32] text-white font-extrabold text-xs rounded-2xl shadow-xs hover:bg-[#256829] cursor-pointer"
+          >
             Upload Bill Document
           </button>
         </div>
       ) : (
-        <div className="d-flex flex-column gap-4">
+        <div className="space-y-6">
           {paginatedBills.map((bill) => {
             const totalCarbon = getBillCarbon(bill);
             
-            // Dynamic AI summary message based on data
             let aiSummary = "Utility bill processing pending. Process document to trigger carbon extraction.";
             if (bill.status === "COMPLETED") {
               if (bill.billType?.toUpperCase().includes("ELEC")) {
-                aiSummary = "Electricity consumption is the largest contributor to this bill's emissions.";
+                aiSummary = "Electricity consumption is the primary emissions contributor to this invoice.";
               } else if (bill.billType?.toUpperCase().includes("GAS") || bill.billType?.toUpperCase().includes("FUEL")) {
-                aiSummary = "Natural Gas usage represents 81% of calculated emissions.";
+                aiSummary = "Natural Gas usage accounts for the majority of calculated carbon output.";
               } else if (bill.billType?.toUpperCase().includes("WATER")) {
                 aiSummary = "Water consumption generated minimal carbon emissions.";
               } else {
                 aiSummary = `AI Extraction complete. Extracted utility emissions verified at ${totalCarbon.toFixed(2)} kg CO₂e.`;
               }
             } else if (bill.status === "FAILED") {
-              aiSummary = "AI Extraction failed for bill. Please verify image URL and retry.";
+              aiSummary = "AI Extraction failed for this document. Please verify image quality and retry.";
             } else if (bill.status === "PROCESSING") {
               aiSummary = "AI Vision OCR is actively parsing and extracting utility metadata fields.";
             }
@@ -635,75 +527,91 @@ const Bills = () => {
             return (
               <div 
                 key={bill.id} 
-                className="card-saas bg-white hover-saas-lift border rounded-4 p-4"
-                style={{ transition: "all 200ms ease" }}
+                className="bg-white border border-[#E2E8F0] rounded-3xl p-7 shadow-xs hover:border-[#2E7D32]/40 transition-all space-y-6"
               >
-                {/* Header */}
-                <div className="d-flex justify-content-between align-items-start flex-wrap gap-2 pb-3 border-bottom mb-3">
-                  <div className="d-flex align-items-center gap-3">
-                    <span className="fs-3">📄</span>
+                {/* Header Row */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E2E8F0]">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-[#E7F3E8] text-[#2E7D32] flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+                      <FileText className="w-6 h-6" />
+                    </div>
                     <div>
-                      <h4 className="fw-bold text-dark mb-0" style={{ letterSpacing: "-0.02em" }}>
-                        {bill.facility?.name || "N/A"}
-                      </h4>
-                      <span className="text-muted small">
-                        📍 {bill.facility?.city}, {bill.facility?.state} | Period: <strong>{bill.billMonth} {bill.billYear}</strong>
-                      </span>
+                      <div className="flex items-center gap-3">
+                        <h3 className="text-xl font-extrabold text-[#1E293B]">
+                          {bill.facility?.name || "Target Facility"}
+                        </h3>
+                        <span className="text-xs font-bold bg-[#F8FAFC] border border-[#E2E8F0] text-[#64748B] px-3 py-1 rounded-full uppercase">
+                          {bill.billType || "Utility"}
+                        </span>
+                      </div>
+                      <p className="text-sm font-medium text-[#64748B] mt-1">
+                        Period: <strong className="text-[#1E293B] font-bold">{bill.billMonth || ""} {bill.billYear || ""}</strong> | Uploaded: {formatDate(bill.createdAt)}
+                      </p>
                     </div>
                   </div>
-                  <div className="d-flex align-items-center gap-4">
-                    <span className="badge bg-secondary text-dark px-2.5 py-0.5" style={{ fontSize: "0.72rem" }}>
-                      {bill.billType}
+
+                  <div className="flex items-center gap-3 self-end sm:self-auto">
+                    <span className={`px-3.5 py-1.5 rounded-full text-xs font-extrabold ${getStatusBadgeClass(bill.status)}`}>
+                      {bill.status}
                     </span>
-                    <div className="d-flex align-items-center gap-1.5">
-                      {bill.status === "COMPLETED" && <span className="text-success">● Completed</span>}
-                      {bill.status === "PENDING" && <span className="text-warning">● Pending</span>}
-                      {bill.status === "PROCESSING" && <span className="text-primary">● Processing</span>}
-                      {bill.status === "FAILED" && <span className="text-danger">● Failed</span>}
-                    </div>
                   </div>
                 </div>
 
-                {/* Summary */}
-                <div className="row g-2 text-center py-2 mb-3">
-                  <div className="col">
-                    <span className="text-muted d-block small mb-1" style={{ fontSize: "0.72rem" }}>CARBON EMISSION</span>
-                    <h5 className="fw-bold text-danger mb-0">
-                      {bill.status === "COMPLETED" ? `${totalCarbon.toFixed(2)} kg CO₂e` : "Pending"}
-                    </h5>
+                {/* Metrics Pill Grid */}
+                <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl p-5 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+                  <div>
+                    <span className="text-xs font-bold text-[#64748B] uppercase tracking-wider block mb-1">CARBON EMISSION</span>
+                    <div className="text-base font-extrabold text-[#EF4444]">
+                      {bill.status === "COMPLETED" ? `${totalCarbon.toFixed(2)} kg` : "Pending"}
+                    </div>
                   </div>
-                  <div className="col border-start">
-                    <span className="text-muted d-block small mb-1" style={{ fontSize: "0.72rem" }}>TOTAL AMOUNT</span>
-                    <h5 className="fw-bold text-dark mb-0">
+                  <div>
+                    <span className="text-xs font-bold text-[#64748B] uppercase tracking-wider block mb-1">TOTAL AMOUNT</span>
+                    <div className="text-base font-extrabold text-[#1E293B]">
                       {bill.totalAmount != null ? formatCurrency(bill.totalAmount) : "—"}
-                    </h5>
+                    </div>
                   </div>
-                  <div className="col border-start">
-                    <span className="text-muted d-block small mb-1" style={{ fontSize: "0.72rem" }}>UPLOAD DATE</span>
-                    <h5 className="fw-bold text-dark mb-0">{formatDate(bill.createdAt)}</h5>
+                  <div>
+                    <span className="text-xs font-bold text-[#64748B] uppercase tracking-wider block mb-1">UPLOAD DATE</span>
+                    <div className="text-base font-extrabold text-[#1E293B]">{formatDate(bill.createdAt)}</div>
                   </div>
-                  <div className="col border-start">
-                    <span className="text-muted d-block small mb-1" style={{ fontSize: "0.72rem" }}>CONFIDENCE</span>
-                    <h5 className="fw-bold text-success mb-0">
+                  <div>
+                    <span className="text-xs font-bold text-[#64748B] uppercase tracking-wider block mb-1">AI CONFIDENCE</span>
+                    <div className="text-base font-extrabold text-[#2E7D32]">
                       {bill.status === "COMPLETED" ? "96.5%" : "N/A"}
-                    </h5>
+                    </div>
                   </div>
                 </div>
 
-                {/* AI Summary Banner */}
-                <div className="p-3 bg-light rounded-3 d-flex justify-content-between align-items-center flex-wrap gap-3 border-start border-success border-4">
-                  <div className="d-flex align-items-center gap-2" style={{ flex: 1 }}>
-                    <span className="fs-5">🤖</span>
-                    <span className="text-muted small">
-                      <strong>AI Summary:</strong> {aiSummary}
-                    </span>
+                {/* AI Summary Banner & Actions */}
+                <div className="bg-[#E7F3E8] border border-[#2E7D32]/20 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="w-8 h-8 rounded-xl bg-[#2E7D32] text-white flex items-center justify-center shrink-0">
+                      <Sparkles className="w-4 h-4" />
+                    </div>
+                    <p className="text-xs md:text-sm font-medium text-[#1E293B] leading-relaxed mb-0">
+                      <strong className="text-[#2E7D32] font-extrabold">AI Summary:</strong> {aiSummary}
+                    </p>
                   </div>
-                  <button 
-                    className="btn btn-outline-success btn-sm border-2 fw-bold"
-                    onClick={() => handleViewDetails(bill.id)}
-                  >
-                    View Analysis →
-                  </button>
+
+                  <div className="flex items-center gap-3 shrink-0 self-end sm:self-auto">
+                    {bill.status === "PENDING" && (
+                      <button
+                        onClick={() => handleProcessBill(bill.id)}
+                        disabled={processingIds.has(bill.id)}
+                        className="px-4 py-2.5 bg-[#2E7D32] text-white font-extrabold text-xs rounded-xl shadow-xs hover:bg-[#256829] cursor-pointer flex items-center gap-2"
+                      >
+                        <Zap className="w-4 h-4" />
+                        <span>Process AI →</span>
+                      </button>
+                    )}
+                    <button 
+                      onClick={() => openDrawer(bill.id)}
+                      className="px-4 py-2.5 bg-white border border-[#2E7D32] text-[#2E7D32] font-extrabold text-xs rounded-xl hover:bg-[#E7F3E8] transition-colors cursor-pointer"
+                    >
+                      View Analysis →
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -711,494 +619,26 @@ const Bills = () => {
         </div>
       )}
 
-      {/* Pagination component */}
+      {/* PAGINATION FOOTER */}
       {totalPages > 1 && (
-        <div className="d-flex justify-content-between align-items-center mt-5 pt-3">
+        <div className="flex items-center justify-between pt-4">
           <button
-            className="btn btn-secondary-white btn-sm"
+            className="px-4 py-2 bg-white border border-[#E2E8F0] text-[#1E293B] font-bold text-xs rounded-xl disabled:opacity-50"
             disabled={currentPage === 1}
             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
           >
             ← Previous
           </button>
-          <span className="small text-muted">
+          <span className="text-xs font-semibold text-[#64748B]">
             Page <strong>{currentPage}</strong> of <strong>{totalPages}</strong>
           </span>
           <button
-            className="btn btn-secondary-white btn-sm"
+            className="px-4 py-2 bg-white border border-[#E2E8F0] text-[#1E293B] font-bold text-xs rounded-xl disabled:opacity-50"
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
           >
             Next →
           </button>
-        </div>
-      )}
-
-      {/* Right-Side Sliding Drawer AI Workspace (40% width) */}
-      {showDrawer && (
-        <div 
-          className="position-fixed top-0 end-0 h-100 bg-white border-start shadow-lg d-flex flex-column"
-          style={{ width: "40%", minWidth: "460px", zIndex: 1100, transition: "transform 250ms ease" }}
-        >
-          {drawerLoading ? (
-            <div className="text-center p-5 m-auto">
-              <div className="spinner-border text-success" role="status" />
-              <p className="text-muted mt-2 small">Loading analysis details...</p>
-            </div>
-          ) : drawerBill ? (
-            <>
-              {/* Header */}
-              <div className="p-4 bg-dark text-white d-flex justify-content-between align-items-start flex-shrink-0">
-                <div>
-                  <span className="badge bg-lime text-dark text-uppercase fw-bold mb-2" style={{ fontSize: "0.68rem" }}>
-                    {drawerBill.billType}
-                  </span>
-                  <h3 className="fw-bold mb-1" style={{ letterSpacing: "-0.02em" }}>{drawerBill.facility?.name}</h3>
-                  <span className="text-white-50 small d-block">Period: {drawerBill.billMonth} {drawerBill.billYear}</span>
-                </div>
-                <div className="d-flex align-items-center gap-3">
-                  <span className="badge bg-secondary text-dark">{drawerBill.status}</span>
-                  <button className="btn btn-close btn-close-white" onClick={() => { setShowDrawer(false); setDrawerBill(null); }} />
-                </div>
-              </div>
-
-              {/* Tabs */}
-              <div className="border-bottom bg-light flex-shrink-0">
-                <nav className="nav nav-tabs px-3 border-0">
-                  <button className={`nav-link border-0 py-2.5 px-3 small ${activeTab === "overview" ? "active fw-bold border-bottom text-primary border-primary" : "text-muted"}`} onClick={() => setActiveTab("overview")}>Overview</button>
-                  <button className={`nav-link border-0 py-2.5 px-3 small ${activeTab === "original" ? "active fw-bold border-bottom text-primary border-primary" : "text-muted"}`} onClick={() => setActiveTab("original")}>Original Bill</button>
-                  <button className={`nav-link border-0 py-2.5 px-3 small ${activeTab === "extraction" ? "active fw-bold border-bottom text-primary border-primary" : "text-muted"}`} onClick={() => setActiveTab("extraction")}>AI Extraction</button>
-                  <button className={`nav-link border-0 py-2.5 px-3 small ${activeTab === "carbon" ? "active fw-bold border-bottom text-primary border-primary" : "text-muted"}`} onClick={() => setActiveTab("carbon")}>Carbon Analysis</button>
-                  <button className={`nav-link border-0 py-2.5 px-3 small ${activeTab === "history" ? "active fw-bold border-bottom text-primary border-primary" : "text-muted"}`} onClick={() => setActiveTab("history")}>History</button>
-                </nav>
-              </div>
-
-              {/* Body */}
-              <div className="p-4 flex-grow-1" style={{ overflowY: "auto" }}>
-                {activeTab === "overview" && (
-                  <div>
-                    <h5 className="fw-bold text-dark mb-3">AI Document Parameters</h5>
-                    <div className="row g-2 mb-4 text-center">
-                      <div className="col-6">
-                        <div className="p-2 border rounded bg-light">
-                          <span className="text-muted d-block small" style={{ fontSize: "0.72rem" }}>Bill Amount</span>
-                          <strong className="text-dark small">{drawerBill.totalAmount != null ? formatCurrency(drawerBill.totalAmount) : "—"}</strong>
-                        </div>
-                      </div>
-                      <div className="col-6">
-                        <div className="p-2 border rounded bg-light">
-                          <span className="text-muted d-block small" style={{ fontSize: "0.72rem" }}>Carbon Emission</span>
-                          <strong className="text-danger small">{getBillCarbon(drawerBill).toFixed(2)} kg</strong>
-                        </div>
-                      </div>
-                      <div className="col-6 mt-2">
-                        <div className="p-2 border rounded bg-light">
-                          <span className="text-muted d-block small" style={{ fontSize: "0.72rem" }}>Upload Date</span>
-                          <strong className="text-dark small">{formatDate(drawerBill.createdAt)}</strong>
-                        </div>
-                      </div>
-                      <div className="col-6 mt-2">
-                        <div className="p-2 border rounded bg-light">
-                          <span className="text-muted d-block small" style={{ fontSize: "0.72rem" }}>AI Extraction Time</span>
-                          <strong className="text-dark small">12s</strong>
-                        </div>
-                      </div>
-                    </div>
-
-                    <h5 className="fw-bold text-dark mb-3">Workspace Operations</h5>
-                    <div className="d-flex flex-column gap-2 mb-3">
-                      {drawerBill.status === "PENDING" && (
-                        <button className="btn btn-lime btn-sm shadow-sm py-2" onClick={() => { handleProcessAI(drawerBill.id); setShowDrawer(false); }}>
-                          ⚡ Run Gemini Vision AI
-                        </button>
-                      )}
-                      {drawerBill.status === "FAILED" && (
-                        <button className="btn btn-lime btn-sm shadow-sm py-2" onClick={() => { handleProcessAI(drawerBill.id); setShowDrawer(false); }}>
-                          🔄 Retry AI Processing
-                        </button>
-                      )}
-                      {drawerBill.status === "COMPLETED" && (
-                        <button className="btn btn-secondary-white btn-sm py-2" onClick={() => handleDownloadJSON(drawerBill)}>
-                          📥 Export AI Extraction JSON
-                        </button>
-                      )}
-                      {drawerBill.status === "PENDING" && (
-                        <button className="btn btn-secondary-white btn-sm py-2" onClick={() => openEditModal(drawerBill)}>
-                          ✏️ Edit Document Metadata
-                        </button>
-                      )}
-                      <button className="btn btn-outline-danger btn-sm py-2 fw-bold" onClick={() => handleDelete(drawerBill.id)}>
-                        🗑️ Delete Document from Queue
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {activeTab === "original" && (
-                  <div>
-                    <h5 className="fw-bold text-dark mb-3">Document Source Preview</h5>
-                    {(previewUrl || drawerBill.billFileUrl || drawerBill.billFileKey) ? (
-                      <div>
-                        <div className="p-2 border rounded bg-light text-center mb-3">
-                          {previewUrl && (
-                            <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="btn btn-outline-dark btn-sm me-2">
-                              Open in New Tab ↗
-                            </a>
-                          )}
-                          <button
-                            className="btn btn-outline-dark btn-sm"
-                            onClick={() => handleDownloadFile(drawerBill.id)}
-                            disabled={downloadUrlLoading}
-                          >
-                            {downloadUrlLoading ? "Preparing Download..." : "Download Document 📥"}
-                          </button>
-                        </div>
-                        <div className="border rounded bg-light overflow-hidden" style={{ height: "360px" }}>
-                          {previewUrl ? (
-                            (drawerBill.billFileKey || drawerBill.billFileUrl || "").toLowerCase().includes(".pdf") ? (
-                              <iframe src={previewUrl} className="w-100 h-100" title="PDF Document Preview" />
-                            ) : (
-                              <img src={previewUrl} alt="Bill Attachment Preview" className="w-100 h-auto object-fit-contain" style={{ maxHeight: "350px" }} />
-                            )
-                          ) : (
-                            <div className="d-flex align-items-center justify-content-center h-100 text-muted">
-                              Loading secure presigned preview...
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-muted small">No source document attachment registered.</p>
-                    )}
-                  </div>
-                )}
-
-                {activeTab === "extraction" && (
-                  <div>
-                    <h5 className="fw-bold text-dark mb-3">Extracted Fields Group</h5>
-                    {drawerBill.status === "COMPLETED" ? (
-                      <div className="table-responsive border rounded bg-white">
-                        <table className="table table-hover align-middle mb-0" style={{ fontSize: "0.85rem" }}>
-                          <thead className="table-light">
-                            <tr>
-                              <th>Dynamic Field Key</th>
-                              <th>Extracted Value</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {drawerBill.consumerName && (
-                              <tr>
-                                <td>Consumer Name</td>
-                                <td><strong className="text-dark">{drawerBill.consumerName}</strong></td>
-                              </tr>
-                            )}
-                            {drawerBill.meterNumber && (
-                              <tr>
-                                <td>Meter Number</td>
-                                <td><strong className="text-dark">{drawerBill.meterNumber}</strong></td>
-                              </tr>
-                            )}
-                            {Object.entries(drawerBill.aiExtractedData || {}).map(([k, v]) => (
-                              <tr key={k}>
-                                <td>{formatKeyLabel(k)}</td>
-                                <td className="text-dark fw-semibold">{v?.toString() || "—"}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <p className="text-muted small">AI extraction data only available for Completed documents.</p>
-                    )}
-                  </div>
-                )}
-
-                {activeTab === "carbon" && (
-                  <div>
-                    <h5 className="fw-bold text-dark mb-3">Carbon Footprint Analysis</h5>
-                    {drawerBill.status === "COMPLETED" ? (
-                      <div>
-                        <div className="card bg-light border-0 p-3 mb-4 text-center">
-                          <span className="text-danger small d-block mb-1">Calculated Carbon Emission</span>
-                          <h3 className="fw-bold text-danger">{getBillCarbon(drawerBill).toFixed(2)} kg CO₂e</h3>
-                        </div>
-                        <h6 className="fw-bold text-dark mb-2">Scope Breakdown</h6>
-                        {drawerBill.utilities && drawerBill.utilities.map((u) => (
-                          <div key={u.id} className="p-3 border rounded mb-2 bg-light d-flex justify-content-between align-items-center">
-                            <div>
-                              <strong className="text-dark">{u.utilityType}</strong>
-                              <span className="text-muted d-block small">Usage: {u.usage} {u.unit}</span>
-                            </div>
-                            <div className="text-end">
-                              <strong className="text-danger">{u.carbonEmission?.toFixed(2)} kg</strong>
-                              <span className="text-muted d-block small">Spend: {formatCurrency(u.amount)}</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-muted small">Carbon footprint calculations only available for Completed documents.</p>
-                    )}
-                  </div>
-                )}
-
-                {activeTab === "history" && (
-                  <div>
-                    <h5 className="fw-bold text-dark mb-3">Processing Lifecycle Timeline</h5>
-                    <div className="position-relative ps-4 border-start py-2">
-                      <div className="mb-4 position-relative">
-                        <span className="position-absolute start-0 translate-middle bg-success rounded-circle" style={{ width: "12px", height: "12px", marginLeft: "-25px" }} />
-                        <strong className="text-dark d-block">Document Uploaded</strong>
-                        <span className="text-muted small">{formatDate(drawerBill.createdAt)}</span>
-                      </div>
-                      {drawerBill.status === "PROCESSING" && (
-                        <div className="mb-4 position-relative">
-                          <span className="position-absolute start-0 translate-middle bg-primary rounded-circle" style={{ width: "12px", height: "12px", marginLeft: "-25px" }} />
-                          <strong className="text-primary d-block">AI Extraction Started</strong>
-                          <span className="text-muted small">Gemini Vision parsing parameters...</span>
-                        </div>
-                      )}
-                      {drawerBill.status === "COMPLETED" && (
-                        <div className="position-relative">
-                          <span className="position-absolute start-0 translate-middle bg-success rounded-circle" style={{ width: "12px", height: "12px", marginLeft: "-25px" }} />
-                          <strong className="text-success d-block">Extraction Completed</strong>
-                          <span className="text-muted small">{formatDate(drawerBill.updatedAt)}</span>
-                        </div>
-                      )}
-                      {drawerBill.status === "FAILED" && (
-                        <div className="position-relative">
-                          <span className="position-absolute start-0 translate-middle bg-danger rounded-circle" style={{ width: "12px", height: "12px", marginLeft: "-25px" }} />
-                          <strong className="text-danger d-block">AI Extraction Failed</strong>
-                          <span className="text-muted small">{formatDate(drawerBill.updatedAt)}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </>
-          ) : null}
-        </div>
-      )}
-
-      {/* Backdrop */}
-      {showDrawer && (
-        <div 
-          className="position-fixed top-0 start-0 w-100 h-100" 
-          style={{ backgroundColor: "rgba(0,0,0,0.3)", zIndex: 1090 }} 
-          onClick={() => { setShowDrawer(false); setDrawerBill(null); }}
-        />
-      )}
-
-      {/* Upload Bill Modal */}
-      {showModal && (
-        <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: "rgba(0,0,0,0.5)", zIndex: 1200 }}>
-          <div className="modal-dialog">
-            <div className="modal-content shadow-lg border-0 rounded-4">
-              <div className="modal-header">
-                <h5 className="modal-title fw-bold">Upload Utility Bill Document</h5>
-                <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
-              </div>
-              <form onSubmit={handleCreateSubmit}>
-                <div className="modal-body">
-                  {formError && <div className="alert alert-danger">{formError}</div>}
-
-                  <div className="mb-3">
-                    <label className="form-label fw-semibold">Target Facility *</label>
-                    <select
-                      className="form-select"
-                      name="facilityId"
-                      value={form.facilityId}
-                      onChange={handleFormChange}
-                      required
-                    >
-                      <option value="">-- Choose Facility --</option>
-                      {facilities.map((f) => (
-                        <option key={f.id} value={f.id}>
-                          {f.name} ({f.city}, {f.state})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label fw-semibold">Bill Type *</label>
-                    <select
-                      className="form-select"
-                      name="billType"
-                      value={form.billType}
-                      onChange={handleFormChange}
-                      required
-                    >
-                      {BILL_TYPES.map((t) => (
-                        <option key={t} value={t}>{t}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="row">
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label fw-semibold">Bill Month *</label>
-                      <select
-                        className="form-select"
-                        name="billMonth"
-                        value={form.billMonth}
-                        onChange={handleFormChange}
-                        required
-                      >
-                        {MONTHS.map((m) => (
-                          <option key={m} value={m}>{m}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label fw-semibold">Bill Year *</label>
-                      <input
-                        type="number"
-                        className="form-control"
-                        name="billYear"
-                        value={form.billYear}
-                        onChange={handleFormChange}
-                        required
-                        min="2000"
-                        max="2100"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label fw-semibold">Bill Document File *</label>
-                    <input
-                      type="file"
-                      className="form-control"
-                      name="billFile"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      onChange={(e) =>
-                        setForm({
-                          ...form,
-                          billFile: e.target.files[0] || null,
-                        })
-                      }
-                      required
-                    />
-                    <div className="form-text">Upload a utility bill document (PDF, JPG, JPEG, or PNG).</div>
-                  </div>
-                </div>
-
-                <div className="modal-footer">
-                  <button type="button" className="btn btn-secondary-white" onClick={() => setShowModal(false)}>
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn btn-lime shadow-sm animate-pulse" disabled={submitting}>
-                    {submitting ? "Uploading..." : "Upload & Enqueue Bill"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Bill Modal */}
-      {showEditModal && (
-        <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: "rgba(0,0,0,0.5)", zIndex: 1200 }}>
-          <div className="modal-dialog">
-            <div className="modal-content shadow-lg border-0 rounded-4">
-              <div className="modal-header">
-                <h5 className="modal-title fw-bold">Edit Bill Upload Metadata</h5>
-                <button type="button" className="btn-close" onClick={() => setShowEditModal(false)}></button>
-              </div>
-              <form onSubmit={handleEditSubmit}>
-                <div className="modal-body">
-                  {editFormError && <div className="alert alert-danger">{editFormError}</div>}
-
-                  <div className="mb-3">
-                    <label className="form-label fw-semibold">Target Facility *</label>
-                    <select
-                      className="form-select"
-                      name="facilityId"
-                      value={editForm.facilityId}
-                      onChange={handleEditFormChange}
-                      required
-                    >
-                      {facilities.map((f) => (
-                        <option key={f.id} value={f.id}>
-                          {f.name} ({f.city}, {f.state})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label fw-semibold">Bill Type *</label>
-                    <select
-                      className="form-select"
-                      name="billType"
-                      value={editForm.billType}
-                      onChange={handleEditFormChange}
-                      required
-                    >
-                      {BILL_TYPES.map((t) => (
-                        <option key={t} value={t}>{t}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="row">
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label fw-semibold">Bill Month *</label>
-                      <select
-                        className="form-select"
-                        name="billMonth"
-                        value={editForm.billMonth}
-                        onChange={handleEditFormChange}
-                        required
-                      >
-                        {MONTHS.map((m) => (
-                          <option key={m} value={m}>{m}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label fw-semibold">Bill Year *</label>
-                      <input
-                        type="number"
-                        className="form-control"
-                        name="billYear"
-                        value={editForm.billYear}
-                        onChange={handleEditFormChange}
-                        required
-                        min="2000"
-                        max="2100"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label fw-semibold">Bill Document URL</label>
-                    <input
-                      type="url"
-                      className="form-control"
-                      name="billFileUrl"
-                      value={editForm.billFileUrl}
-                      onChange={handleEditFormChange}
-                    />
-                  </div>
-                </div>
-
-                <div className="modal-footer">
-                  <button type="button" className="btn btn-secondary-white" onClick={() => setShowEditModal(false)}>
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn btn-lime shadow-sm" disabled={editSubmitting}>
-                    {editSubmitting ? "Saving..." : "Update Record"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
         </div>
       )}
     </div>

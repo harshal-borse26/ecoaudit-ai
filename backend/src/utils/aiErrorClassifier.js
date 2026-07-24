@@ -36,6 +36,23 @@ export const classifyAiError = (error) => {
     };
   }
 
+  // 1b. Empty model output / safety block (Gemini SDK throws this when response has no candidates)
+  if (
+    message.includes("model output must contain") ||
+    message.includes("no candidates") ||
+    message.includes("response blocked") ||
+    message.includes("finishreason") ||
+    message.includes("empty response text") ||
+    message.includes("safety") ||
+    message.includes("recitation")
+  ) {
+    return {
+      type: ErrorTypes.SERVICE_UNAVAILABLE,
+      isFailoverTrigger: true,
+      reason: "Gemini returned an empty or safety-blocked response.",
+    };
+  }
+
   // 2. Model Unavailable / Not Found / Deprecated (HTTP 404 or specific error string)
   if (
     status === 404 ||
