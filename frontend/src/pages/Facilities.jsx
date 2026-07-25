@@ -3,19 +3,19 @@ import { useNavigate } from "react-router-dom";
 import { facilityService } from "../services/facilityService";
 import { billService } from "../services/billService";
 import { formatCurrency, formatDate, getStatusBadgeClass } from "../utils/helpers";
-import { 
-  Building2, 
-  Search, 
-  Filter, 
-  Plus, 
-  RefreshCw, 
-  Zap, 
-  BarChart3, 
-  FileText, 
-  CheckCircle2, 
-  MapPin, 
-  Sparkles, 
-  ArrowRight, 
+import {
+  Building2,
+  Search,
+  Filter,
+  Plus,
+  RefreshCw,
+  Zap,
+  BarChart3,
+  FileText,
+  CheckCircle2,
+  MapPin,
+  Sparkles,
+  ArrowRight,
   ChevronRight,
   Trash2,
   Edit,
@@ -23,7 +23,8 @@ import {
   PieChart,
   ShieldCheck,
   TrendingUp,
-  TrendingDown
+  TrendingDown,
+  X
 } from "lucide-react";
 
 const FACILITY_TYPES = ["Office", "Warehouse", "Manufacturing", "Retail", "Data Center", "Hospital", "Other"];
@@ -110,11 +111,18 @@ const Facilities = () => {
   };
 
   const openCreateModal = () => {
+    console.log("Button clicked");
+
     setModalMode("create");
     setForm({ ...emptyForm });
     setEditId(null);
     setFormError("");
+    console.log("showModal before:", showModal);
     setShowModal(true);
+    setTimeout(() => {
+      console.log("Modal should now be open");
+    }, 100);
+    console.log("Current showModal:", showModal);
   };
 
   const openEditModal = (facility) => {
@@ -241,10 +249,10 @@ const Facilities = () => {
   const filteredAndSorted = useMemo(() => {
     let result = enrichedFacilities.filter((fac) => {
       const matchSearch = fac.name.toLowerCase().includes(search.toLowerCase()) ||
-                          fac.city.toLowerCase().includes(search.toLowerCase()) ||
-                          fac.type.toLowerCase().includes(search.toLowerCase()) ||
-                          fac.state.toLowerCase().includes(search.toLowerCase());
-      
+        fac.city.toLowerCase().includes(search.toLowerCase()) ||
+        fac.type.toLowerCase().includes(search.toLowerCase()) ||
+        fac.state.toLowerCase().includes(search.toLowerCase());
+
       const matchStatus = statusFilter === "ALL" || fac.healthStatus.label.toUpperCase() === statusFilter.toUpperCase();
       const matchType = typeFilter === "ALL" || fac.type.toUpperCase() === typeFilter.toUpperCase();
       const matchUtility = utilityFilter === "ALL" || fac.dominantUtility.toUpperCase() === utilityFilter.toUpperCase();
@@ -294,15 +302,15 @@ const Facilities = () => {
           <p className="text-sm font-medium text-[#64748B] mt-1">Track company facility locations, carbon emissions, AI status, and decarbonization insights.</p>
         </div>
         <div className="flex items-center gap-4">
-          <button 
-            className="px-4 py-2.5 bg-white border border-[#E2E8F0] text-[#1E293B] font-bold text-xs rounded-2xl hover:bg-[#F8FAFC] transition-colors flex items-center gap-2 shadow-xs cursor-pointer" 
+          <button
+            className="px-4 py-2.5 bg-white border border-[#E2E8F0] text-[#1E293B] font-bold text-xs rounded-2xl hover:bg-[#F8FAFC] transition-colors flex items-center gap-2 shadow-xs cursor-pointer"
             onClick={fetchFacilities}
           >
             <RefreshCw className="w-4 h-4" />
             <span>Refresh</span>
           </button>
-          <button 
-            className="px-5 py-2.5 bg-[#2E7D32] text-white font-extrabold text-xs rounded-2xl shadow-md shadow-[#2E7D32]/25 hover:bg-[#256829] transition-colors flex items-center gap-2 cursor-pointer" 
+          <button
+            className="px-5 py-2.5 bg-[#2E7D32] text-white font-extrabold text-xs rounded-2xl shadow-md shadow-[#2E7D32]/25 hover:bg-[#256829] transition-colors flex items-center gap-2 cursor-pointer"
             onClick={openCreateModal}
           >
             <Plus className="w-5 h-5 stroke-[2.5]" />
@@ -441,8 +449,8 @@ const Facilities = () => {
       ) : (
         <div className="space-y-6">
           {paginatedFacilities.map((fac) => (
-            <div 
-              key={fac.id} 
+            <div
+              key={fac.id}
               className="bg-white border border-[#E2E8F0] rounded-3xl p-7 shadow-xs hover:border-[#2E7D32]/40 transition-all space-y-6"
             >
               {/* Card Header Row */}
@@ -453,7 +461,7 @@ const Facilities = () => {
                   </div>
                   <div>
                     <div className="flex items-center gap-3">
-                      <h3 
+                      <h3
                         onClick={() => navigate(`/facilities/${fac.id}`)}
                         className="text-xl font-extrabold text-[#1E293B] hover:text-[#2E7D32] transition-colors cursor-pointer"
                       >
@@ -533,7 +541,7 @@ const Facilities = () => {
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0 self-end sm:self-auto">
-                  <button 
+                  <button
                     className="px-4 py-2.5 bg-white border border-[#2E7D32] text-[#2E7D32] font-extrabold text-xs rounded-xl hover:bg-[#E7F3E8] transition-colors cursor-pointer"
                     onClick={() => openFacilityDrawer(fac)}
                   >
@@ -572,6 +580,330 @@ const Facilities = () => {
           >
             Next →
           </button>
+        </div>
+      )}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl">
+            <h2 className="text-xl font-bold mb-4">
+              {modalMode === "create" ? "Add Facility" : "Edit Facility"}
+            </h2>
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+
+              {formError && (
+                <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-red-600 text-sm">
+                  {formError}
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+
+                <div className="col-span-2">
+                  <label className="block mb-1 font-semibold">
+                    Facility Name
+                  </label>
+
+                  <input
+                    type="text"
+                    name="name"
+                    value={form.name}
+                    onChange={handleChange}
+                    required
+                    className="w-full border rounded-xl px-4 py-3"
+                  />
+                </div>
+
+                <div>
+                  <label className="block mb-1 font-semibold">
+                    Facility Type
+                  </label>
+
+                  <select
+                    name="type"
+                    value={form.type}
+                    onChange={handleChange}
+                    required
+                    className="w-full border rounded-xl px-4 py-3"
+                  >
+                    <option value="">Select</option>
+
+                    {FACILITY_TYPES.map(type => (
+                      <option
+                        key={type}
+                        value={type}
+                      >
+                        {type}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block mb-1 font-semibold">
+                    Postal Code
+                  </label>
+
+                  <input
+                    type="text"
+                    name="postalCode"
+                    value={form.postalCode}
+                    onChange={handleChange}
+                    className="w-full border rounded-xl px-4 py-3"
+                  />
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block mb-1 font-semibold">
+                    Address
+                  </label>
+
+                  <input
+                    type="text"
+                    name="address"
+                    value={form.address}
+                    onChange={handleChange}
+                    required
+                    className="w-full border rounded-xl px-4 py-3"
+                  />
+                </div>
+
+                <div>
+                  <label className="block mb-1 font-semibold">
+                    City
+                  </label>
+
+                  <input
+                    type="text"
+                    name="city"
+                    value={form.city}
+                    onChange={handleChange}
+                    required
+                    className="w-full border rounded-xl px-4 py-3"
+                  />
+                </div>
+
+                <div>
+                  <label className="block mb-1 font-semibold">
+                    State
+                  </label>
+
+                  <input
+                    type="text"
+                    name="state"
+                    value={form.state}
+                    onChange={handleChange}
+                    required
+                    className="w-full border rounded-xl px-4 py-3"
+                  />
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block mb-1 font-semibold">
+                    Country
+                  </label>
+
+                  <input
+                    type="text"
+                    name="country"
+                    value={form.country}
+                    onChange={handleChange}
+                    required
+                    className="w-full border rounded-xl px-4 py-3"
+                  />
+                </div>
+
+              </div>
+
+              <div className="flex justify-end gap-3">
+
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="px-5 py-2 rounded-xl border"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-5 py-2 rounded-xl bg-green-600 text-white"
+                >
+                  {submitting ? "Saving..." : "Save"}
+                </button>
+
+              </div>
+
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* RIGHT-SIDE SLIDING FACILITY DETAILS DRAWER WORKSPACE */}
+      {showDrawer && drawerFacility && (
+        <div className="fixed inset-0 z-50 overflow-hidden bg-black/40 backdrop-blur-xs flex justify-end animate-fadeIn">
+          <div className="w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col justify-between overflow-y-auto">
+            {/* Header */}
+            <div className="p-6 border-b border-[#E2E8F0] flex items-center justify-between bg-[#F8FAFC]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#E7F3E8] text-[#2E7D32] flex items-center justify-center font-bold">
+                  <Building2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-extrabold text-[#1E293B]">{drawerFacility.name}</h2>
+                  <p className="text-xs font-semibold text-[#64748B] flex items-center gap-1 mt-0.5">
+                    <MapPin className="w-3.5 h-3.5" />
+                    <span>{drawerFacility.address}, {drawerFacility.city}, {drawerFacility.state}</span>
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="px-3 py-1 rounded-full bg-[#E7F3E8] text-[#2E7D32] text-xs font-extrabold">
+                  {drawerFacility.type}
+                </span>
+                <button
+                  onClick={() => setShowDrawer(false)}
+                  className="p-2 text-[#94A3B8] hover:text-[#1E293B] hover:bg-white rounded-xl border border-[#E2E8F0] transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Navigation Tabs */}
+            <div className="flex items-center border-b border-[#E2E8F0] px-6 bg-white gap-2">
+              <button
+                onClick={() => setActiveTab("overview")}
+                className={`py-3 px-4 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
+                  activeTab === "overview"
+                    ? "border-[#2E7D32] text-[#2E7D32]"
+                    : "border-transparent text-[#64748B] hover:text-[#1E293B]"
+                }`}
+              >
+                Overview
+              </button>
+              <button
+                onClick={() => setActiveTab("bills")}
+                className={`py-3 px-4 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
+                  activeTab === "bills"
+                    ? "border-[#2E7D32] text-[#2E7D32]"
+                    : "border-transparent text-[#64748B] hover:text-[#1E293B]"
+                }`}
+              >
+                Utility Bills ({drawerFacility.totalBills})
+              </button>
+            </div>
+
+            {/* Drawer Body */}
+            <div className="p-6 flex-1 overflow-y-auto space-y-6">
+              {activeTab === "overview" && (
+                <div className="space-y-6">
+                  {/* Summary KPI Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div className="p-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl text-center">
+                      <span className="text-[10px] font-bold text-[#64748B] uppercase block">CARBON EMISSION</span>
+                      <span className="text-base font-extrabold text-[#EF4444] mt-1 block">
+                        {drawerFacility.carbonEmission > 0 ? `${drawerFacility.carbonEmission.toFixed(2)} kg` : "0.00 kg"}
+                      </span>
+                    </div>
+                    <div className="p-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl text-center">
+                      <span className="text-[10px] font-bold text-[#64748B] uppercase block">TOTAL INVOICES</span>
+                      <span className="text-base font-extrabold text-[#1E293B] mt-1 block">
+                        {drawerFacility.totalBills} Bills
+                      </span>
+                    </div>
+                    <div className="p-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl text-center">
+                      <span className="text-[10px] font-bold text-[#64748B] uppercase block">PRIMARY UTILITY</span>
+                      <span className="text-base font-extrabold text-[#1565C0] mt-1 block">
+                        {drawerFacility.dominantUtility}
+                      </span>
+                    </div>
+                    <div className="p-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl text-center">
+                      <span className="text-[10px] font-bold text-[#64748B] uppercase block">HEALTH STATUS</span>
+                      <span className="text-base font-extrabold text-[#2E7D32] mt-1 block">
+                        {drawerFacility.healthStatus.label}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Address & Facility Information */}
+                  <div className="bg-white border border-[#E2E8F0] rounded-2xl p-5 space-y-4 shadow-xs">
+                    <h3 className="text-xs font-extrabold text-[#1E293B] uppercase tracking-wider">Facility Metadata</h3>
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <span className="text-[#64748B] block font-medium">Full Address:</span>
+                        <span className="font-bold text-[#1E293B]">{drawerFacility.address}</span>
+                      </div>
+                      <div>
+                        <span className="text-[#64748B] block font-medium">City / State:</span>
+                        <span className="font-bold text-[#1E293B]">{drawerFacility.city}, {drawerFacility.state}</span>
+                      </div>
+                      <div>
+                        <span className="text-[#64748B] block font-medium">Country / Zip:</span>
+                        <span className="font-bold text-[#1E293B]">{drawerFacility.country} {drawerFacility.postalCode || ""}</span>
+                      </div>
+                      <div>
+                        <span className="text-[#64748B] block font-medium">Facility Type:</span>
+                        <span className="font-bold text-[#1E293B]">{drawerFacility.type}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* AI ESG Insight Banner */}
+                  <div className="bg-[#E7F3E8] border border-[#2E7D32]/20 rounded-2xl p-5 space-y-2">
+                    <div className="flex items-center gap-2 text-[#2E7D32]">
+                      <Sparkles className="w-4 h-4 font-bold" />
+                      <span className="text-xs font-extrabold uppercase tracking-wider">AI ESG Decarbonization Insight</span>
+                    </div>
+                    <p className="text-xs font-medium text-[#1E293B] leading-relaxed">
+                      {drawerFacility.aiInsight}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "bills" && (
+                <div className="space-y-4">
+                  {(!drawerFacility.bills || drawerFacility.bills.length === 0) ? (
+                    <div className="p-8 text-center bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl text-xs font-semibold text-[#64748B]">
+                      No utility invoices uploaded yet for this site.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {drawerFacility.bills.map((b) => (
+                        <div key={b.id} className="p-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl flex items-center justify-between">
+                          <div>
+                            <span className="text-xs font-bold text-[#1E293B] block">{b.billType} — {b.billMonth} {b.billYear}</span>
+                            <span className="text-[10px] text-[#64748B]">Uploaded {formatDate(b.createdAt)}</span>
+                          </div>
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold ${getStatusBadgeClass(b.status)}`}>
+                            {b.status}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-[#E2E8F0] bg-[#F8FAFC] flex justify-between items-center">
+              <button
+                onClick={() => openEditModal(drawerFacility)}
+                className="px-4 py-2 bg-white border border-[#E2E8F0] text-[#1E293B] font-bold text-xs rounded-xl hover:bg-white cursor-pointer"
+              >
+                Edit Facility
+              </button>
+              <button
+                onClick={() => setShowDrawer(false)}
+                className="px-5 py-2 bg-[#2E7D32] text-white font-extrabold text-xs rounded-xl hover:bg-[#256829] cursor-pointer"
+              >
+                Close Drawer
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

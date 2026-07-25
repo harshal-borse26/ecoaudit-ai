@@ -4,6 +4,7 @@ export const billService = {
   getAll: () => api.get("/bills"),
   getById: (id) => api.get(`/bills/${id}`),
   getFileUrl: (id, mode = "preview") => api.get(`/bills/${id}/file-url?mode=${mode}`),
+  getPreviewUrl: (id) => api.get(`/bills/${id}/file-url?mode=preview`),
   create: (data) =>
     api.post("/bills", data, {
       headers: {

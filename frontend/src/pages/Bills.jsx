@@ -2,23 +2,23 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { billService } from "../services/billService";
 import { facilityService } from "../services/facilityService";
 import { formatCurrency, formatDate, getStatusBadgeClass } from "../utils/helpers";
-import { 
-  FileText, 
-  Upload, 
-  RefreshCw, 
-  Search, 
-  Filter, 
-  CheckCircle2, 
-  Clock, 
-  AlertTriangle, 
-  Sparkles, 
-  Eye, 
-  Download, 
-  Trash2, 
-  Edit3, 
-  Zap, 
-  Building2, 
-  ShieldCheck, 
+import {
+  FileText,
+  Upload,
+  RefreshCw,
+  Search,
+  Filter,
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
+  Sparkles,
+  Eye,
+  Download,
+  Trash2,
+  Edit3,
+  Zap,
+  Building2,
+  ShieldCheck,
   ArrowRight,
   X,
   FileCode
@@ -149,6 +149,7 @@ const Bills = () => {
   };
 
   const openCreateModal = () => {
+    console.log("Upload clicked");
     setForm({
       facilityId: facilities.length > 0 ? facilities[0].id : "",
       billType: "Electricity",
@@ -277,12 +278,19 @@ const Bills = () => {
         setDrawerBill(bData);
 
         try {
-          const pRes = await billService.getPreviewUrl(billId);
+          const pRes = await billService.getFileUrl(billId, "preview");
           if (pRes.data?.success) {
             setPreviewUrl(pRes.data.data.url);
           }
         } catch {
-          setPreviewUrl(bData.billFileUrl || "");
+          try {
+            const pResOld = await billService.getPreviewUrl(billId);
+            if (pResOld.data?.success) {
+              setPreviewUrl(pResOld.data.data.url);
+            }
+          } catch {
+            setPreviewUrl(bData.billFileUrl || "");
+          }
         }
       }
     } catch (err) {
@@ -360,15 +368,15 @@ const Bills = () => {
           <p className="text-sm font-medium text-[#64748B] mt-1">Manage uploaded utility bills, AI extraction results and carbon analysis.</p>
         </div>
         <div className="flex items-center gap-4">
-          <button 
-            className="px-4 py-2.5 bg-white border border-[#E2E8F0] text-[#1E293B] font-bold text-xs rounded-2xl hover:bg-[#F8FAFC] transition-colors flex items-center gap-2 shadow-xs cursor-pointer" 
+          <button
+            className="px-4 py-2.5 bg-white border border-[#E2E8F0] text-[#1E293B] font-bold text-xs rounded-2xl hover:bg-[#F8FAFC] transition-colors flex items-center gap-2 shadow-xs cursor-pointer"
             onClick={fetchData}
           >
             <RefreshCw className="w-4 h-4" />
             <span>Refresh</span>
           </button>
-          <button 
-            className="px-5 py-2.5 bg-[#2E7D32] text-white font-extrabold text-xs rounded-2xl shadow-md shadow-[#2E7D32]/25 hover:bg-[#256829] transition-colors flex items-center gap-2 cursor-pointer" 
+          <button
+            className="px-5 py-2.5 bg-[#2E7D32] text-white font-extrabold text-xs rounded-2xl shadow-md shadow-[#2E7D32]/25 hover:bg-[#256829] transition-colors flex items-center gap-2 cursor-pointer"
             onClick={openCreateModal}
           >
             <Upload className="w-4 h-4" />
@@ -441,8 +449,8 @@ const Bills = () => {
 
           {/* Facility */}
           <div>
-            <select 
-              value={facilityFilter} 
+            <select
+              value={facilityFilter}
               onChange={(e) => { setFacilityFilter(e.target.value); setCurrentPage(1); }}
               className="w-full h-11 px-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl text-sm font-bold text-[#1E293B] focus:outline-none focus:border-[#2E7D32]"
             >
@@ -455,8 +463,8 @@ const Bills = () => {
 
           {/* Bill Type */}
           <div>
-            <select 
-              value={typeFilter} 
+            <select
+              value={typeFilter}
               onChange={(e) => { setTypeFilter(e.target.value); setCurrentPage(1); }}
               className="w-full h-11 px-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl text-sm font-bold text-[#1E293B] focus:outline-none focus:border-[#2E7D32]"
             >
@@ -469,8 +477,8 @@ const Bills = () => {
 
           {/* Status */}
           <div>
-            <select 
-              value={statusFilter} 
+            <select
+              value={statusFilter}
               onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
               className="w-full h-11 px-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl text-sm font-bold text-[#1E293B] focus:outline-none focus:border-[#2E7D32]"
             >
@@ -495,7 +503,7 @@ const Bills = () => {
           <FileText className="w-12 h-12 text-[#94A3B8] mx-auto" />
           <h3 className="text-base font-extrabold text-[#1E293B]">No utility bills uploaded yet.</h3>
           <p className="text-sm font-medium text-[#64748B] max-w-md mx-auto">Upload your first utility bill document to begin AI-powered extraction and carbon accounting.</p>
-          <button 
+          <button
             onClick={openCreateModal}
             className="px-5 py-2.5 bg-[#2E7D32] text-white font-extrabold text-xs rounded-2xl shadow-xs hover:bg-[#256829] cursor-pointer"
           >
@@ -506,7 +514,7 @@ const Bills = () => {
         <div className="space-y-6">
           {paginatedBills.map((bill) => {
             const totalCarbon = getBillCarbon(bill);
-            
+
             let aiSummary = "Utility bill processing pending. Process document to trigger carbon extraction.";
             if (bill.status === "COMPLETED") {
               if (bill.billType?.toUpperCase().includes("ELEC")) {
@@ -525,8 +533,8 @@ const Bills = () => {
             }
 
             return (
-              <div 
-                key={bill.id} 
+              <div
+                key={bill.id}
                 className="bg-white border border-[#E2E8F0] rounded-3xl p-7 shadow-xs hover:border-[#2E7D32]/40 transition-all space-y-6"
               >
                 {/* Header Row */}
@@ -605,7 +613,7 @@ const Bills = () => {
                         <span>Process AI →</span>
                       </button>
                     )}
-                    <button 
+                    <button
                       onClick={() => openDrawer(bill.id)}
                       className="px-4 py-2.5 bg-white border border-[#2E7D32] text-[#2E7D32] font-extrabold text-xs rounded-xl hover:bg-[#E7F3E8] transition-colors cursor-pointer"
                     >
@@ -639,6 +647,410 @@ const Bills = () => {
           >
             Next →
           </button>
+        </div>
+      )}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl">
+            <h2 className="text-xl font-bold mb-4">Upload Utility Bill</h2>
+
+            <form onSubmit={handleCreateSubmit} className="space-y-4">
+              {formError && (
+                <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-red-600 text-sm">
+                  {formError}
+                </div>
+              )}
+
+              <div className="space-y-4">
+
+                <div>
+                  <label className="block mb-2 font-semibold">
+                    Facility
+                  </label>
+
+                  <select
+                    name="facilityId"
+                    value={form.facilityId}
+                    onChange={handleFormChange}
+                    className="w-full border rounded-xl px-4 py-3"
+                    required
+                  >
+                    <option value="">
+                      Select Facility
+                    </option>
+
+                    {facilities.map(f => (
+                      <option
+                        key={f.id}
+                        value={f.id}
+                      >
+                        {f.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block mb-2 font-semibold">
+                    Utility Type
+                  </label>
+
+                  <select
+                    name="billType"
+                    value={form.billType}
+                    onChange={handleFormChange}
+                    className="w-full border rounded-xl px-4 py-3"
+                  >
+                    {BILL_TYPES.map(type => (
+                      <option
+                        key={type}
+                        value={type}
+                      >
+                        {type}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+
+                  <div>
+                    <label className="block mb-2 font-semibold">
+                      Month
+                    </label>
+
+                    <select
+                      name="billMonth"
+                      value={form.billMonth}
+                      onChange={handleFormChange}
+                      className="w-full border rounded-xl px-4 py-3"
+                    >
+                      {MONTHS.map(month => (
+                        <option
+                          key={month}
+                          value={month}
+                        >
+                          {month}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block mb-2 font-semibold">
+                      Year
+                    </label>
+
+                    <input
+                      type="number"
+                      name="billYear"
+                      value={form.billYear}
+                      onChange={handleFormChange}
+                      className="w-full border rounded-xl px-4 py-3"
+                    />
+                  </div>
+
+                </div>
+
+                <div>
+                  <label className="block mb-2 font-semibold">
+                    Upload Bill
+                  </label>
+
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    className="w-full border rounded-xl px-4 py-3"
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        billFile: e.target.files[0]
+                      })
+                    }
+                  />
+                </div>
+
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 rounded-xl border"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-4 py-2 rounded-xl bg-green-600 text-white"
+                >
+                  {submitting ? "Uploading..." : "Upload"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* RIGHT-SIDE SLIDING ANALYSIS DRAWER WORKSPACE */}
+      {showDrawer && (
+        <div className="fixed inset-0 z-50 overflow-hidden bg-black/40 backdrop-blur-xs flex justify-end animate-fadeIn">
+          <div className="w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col justify-between overflow-y-auto">
+            {/* Drawer Header */}
+            <div className="p-6 border-b border-[#E2E8F0] flex items-center justify-between bg-[#F8FAFC]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#E7F3E8] text-[#2E7D32] flex items-center justify-center font-bold">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-extrabold text-[#1E293B]">
+                    {drawerBill?.facility?.name || "Utility Bill Document"}
+                  </h2>
+                  <p className="text-xs font-semibold text-[#64748B]">
+                    {drawerBill?.billType || "Utility"} Invoice | {drawerBill?.billMonth || ""} {drawerBill?.billYear || ""}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                {drawerBill && (
+                  <span className={`px-3 py-1 rounded-full text-xs font-extrabold ${getStatusBadgeClass(drawerBill.status)}`}>
+                    {drawerBill.status}
+                  </span>
+                )}
+                <button
+                  onClick={closeDrawer}
+                  className="p-2 text-[#94A3B8] hover:text-[#1E293B] hover:bg-white rounded-xl border border-[#E2E8F0] transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Drawer Navigation Tabs */}
+            <div className="flex items-center border-b border-[#E2E8F0] px-6 bg-white gap-2">
+              <button
+                onClick={() => setActiveTab("overview")}
+                className={`py-3 px-4 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
+                  activeTab === "overview"
+                    ? "border-[#2E7D32] text-[#2E7D32]"
+                    : "border-transparent text-[#64748B] hover:text-[#1E293B]"
+                }`}
+              >
+                Overview
+              </button>
+              <button
+                onClick={() => setActiveTab("utilities")}
+                className={`py-3 px-4 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
+                  activeTab === "utilities"
+                    ? "border-[#2E7D32] text-[#2E7D32]"
+                    : "border-transparent text-[#64748B] hover:text-[#1E293B]"
+                }`}
+              >
+                Extracted Utilities ({drawerBill?.utilities?.length || 0})
+              </button>
+              <button
+                onClick={() => setActiveTab("preview")}
+                className={`py-3 px-4 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
+                  activeTab === "preview"
+                    ? "border-[#2E7D32] text-[#2E7D32]"
+                    : "border-transparent text-[#64748B] hover:text-[#1E293B]"
+                }`}
+              >
+                File Preview
+              </button>
+              <button
+                onClick={() => setActiveTab("json")}
+                className={`py-3 px-4 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
+                  activeTab === "json"
+                    ? "border-[#2E7D32] text-[#2E7D32]"
+                    : "border-transparent text-[#64748B] hover:text-[#1E293B]"
+                }`}
+              >
+                Raw AI JSON
+              </button>
+            </div>
+
+            {/* Drawer Content Body */}
+            <div className="p-6 flex-1 overflow-y-auto space-y-6">
+              {drawerLoading ? (
+                <div className="flex flex-col items-center justify-center py-20 text-[#64748B]">
+                  <RefreshCw className="w-8 h-8 animate-spin text-[#2E7D32] mb-3" />
+                  <p className="text-sm font-bold">Loading document analysis details...</p>
+                </div>
+              ) : !drawerBill ? (
+                <div className="text-center py-12 text-[#64748B]">
+                  <p className="text-sm font-semibold">No bill data available.</p>
+                </div>
+              ) : (
+                <>
+                  {activeTab === "overview" && (
+                    <div className="space-y-6">
+                      {/* Summary Cards */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div className="p-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl text-center">
+                          <span className="text-[10px] font-bold text-[#64748B] uppercase block">TOTAL AMOUNT</span>
+                          <span className="text-base font-extrabold text-[#1E293B] mt-1 block">
+                            {drawerBill.totalAmount != null ? formatCurrency(drawerBill.totalAmount) : "—"}
+                          </span>
+                        </div>
+                        <div className="p-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl text-center">
+                          <span className="text-[10px] font-bold text-[#64748B] uppercase block">CARBON EMISSION</span>
+                          <span className="text-base font-extrabold text-[#EF4444] mt-1 block">
+                            {getBillCarbon(drawerBill).toFixed(2)} kg
+                          </span>
+                        </div>
+                        <div className="p-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl text-center">
+                          <span className="text-[10px] font-bold text-[#64748B] uppercase block">CONSUMER NAME</span>
+                          <span className="text-xs font-extrabold text-[#1E293B] mt-1 block truncate">
+                            {drawerBill.consumerName || "—"}
+                          </span>
+                        </div>
+                        <div className="p-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl text-center">
+                          <span className="text-[10px] font-bold text-[#64748B] uppercase block">METER NUMBER</span>
+                          <span className="text-xs font-extrabold text-[#1E293B] mt-1 block truncate">
+                            {drawerBill.meterNumber || "—"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Key Metadata Table */}
+                      <div className="bg-white border border-[#E2E8F0] rounded-2xl p-5 space-y-4 shadow-xs">
+                        <h3 className="text-xs font-extrabold text-[#1E293B] uppercase tracking-wider">Extracted Metadata</h3>
+                        <div className="grid grid-cols-2 gap-3 text-xs">
+                          <div>
+                            <span className="text-[#64748B] block font-medium">Facility:</span>
+                            <span className="font-bold text-[#1E293B]">{drawerBill.facility?.name}</span>
+                          </div>
+                          <div>
+                            <span className="text-[#64748B] block font-medium">Bill Type:</span>
+                            <span className="font-bold text-[#1E293B]">{drawerBill.billType}</span>
+                          </div>
+                          <div>
+                            <span className="text-[#64748B] block font-medium">Billing Period:</span>
+                            <span className="font-bold text-[#1E293B]">{drawerBill.billMonth} {drawerBill.billYear}</span>
+                          </div>
+                          <div>
+                            <span className="text-[#64748B] block font-medium">Bill Date:</span>
+                            <span className="font-bold text-[#1E293B]">{formatDate(drawerBill.billDate || drawerBill.createdAt)}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* AI Ingestion Summary Banner */}
+                      <div className="bg-[#E7F3E8] border border-[#2E7D32]/20 rounded-2xl p-5 space-y-2">
+                        <div className="flex items-center gap-2 text-[#2E7D32]">
+                          <Sparkles className="w-4 h-4 font-bold" />
+                          <span className="text-xs font-extrabold uppercase tracking-wider">AI Ingestion Summary</span>
+                        </div>
+                        <p className="text-xs font-medium text-[#1E293B] leading-relaxed">
+                          Automated OCR document parsing and energy accounting verified this invoice. Multi-field data extracted with high precision.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === "utilities" && (
+                    <div className="space-y-4">
+                      {(!drawerBill.utilities || drawerBill.utilities.length === 0) ? (
+                        <div className="p-8 text-center bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl text-xs font-semibold text-[#64748B]">
+                          No specific utility breakdown items recorded.
+                        </div>
+                      ) : (
+                        <div className="bg-white border border-[#E2E8F0] rounded-2xl overflow-hidden shadow-xs">
+                          <table className="w-full text-left text-xs">
+                            <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0] font-bold text-[#64748B]">
+                              <tr>
+                                <th className="p-3">Utility Type</th>
+                                <th className="p-3">Usage</th>
+                                <th className="p-3">Unit</th>
+                                <th className="p-3">Amount</th>
+                                <th className="p-3">Carbon (kg)</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-[#E2E8F0] font-semibold text-[#1E293B]">
+                              {drawerBill.utilities.map((u, idx) => (
+                                <tr key={u.id || idx}>
+                                  <td className="p-3 font-bold">{u.utilityType}</td>
+                                  <td className="p-3">{u.usage}</td>
+                                  <td className="p-3">{u.unit}</td>
+                                  <td className="p-3">{formatCurrency(u.amount)}</td>
+                                  <td className="p-3 text-[#EF4444] font-bold">{u.carbonEmission?.toFixed(2)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeTab === "preview" && (
+                    <div className="space-y-4">
+                      {previewUrl ? (
+                        <div className="border border-[#E2E8F0] rounded-2xl p-4 bg-[#F8FAFC] flex flex-col items-center justify-center space-y-4">
+                          {previewUrl.toLowerCase().includes(".pdf") ? (
+                            <iframe src={previewUrl} title="Document Preview" className="w-full h-[480px] rounded-xl border border-[#E2E8F0]" />
+                          ) : (
+                            <img src={previewUrl} alt="Utility Bill Document Preview" className="max-h-[450px] object-contain rounded-xl border border-[#E2E8F0] shadow-xs" />
+                          )}
+                          <a
+                            href={previewUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 bg-[#2E7D32] text-white font-extrabold text-xs rounded-xl shadow-xs hover:bg-[#256829] flex items-center gap-2 cursor-pointer"
+                          >
+                            <Download className="w-4 h-4" />
+                            <span>Download Document File</span>
+                          </a>
+                        </div>
+                      ) : drawerBill.billFileUrl ? (
+                        <div className="p-8 text-center bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl space-y-3">
+                          <p className="text-xs font-semibold text-[#64748B]">Document file available at stored URL.</p>
+                          <a
+                            href={drawerBill.billFileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 bg-[#2E7D32] text-white font-extrabold text-xs rounded-xl shadow-xs hover:bg-[#256829] inline-flex items-center gap-2 cursor-pointer"
+                          >
+                            <Eye className="w-4 h-4" />
+                            <span>Open Stored File Link</span>
+                          </a>
+                        </div>
+                      ) : (
+                        <div className="p-8 text-center bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl text-xs font-semibold text-[#64748B]">
+                          No document preview file uploaded for this bill record.
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeTab === "json" && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-[#64748B]">Extracted Key-Value Payload</span>
+                        <span className="text-[10px] font-bold text-[#2E7D32] uppercase">JSON Schema</span>
+                      </div>
+                      <pre className="bg-[#0F172A] text-emerald-400 p-5 rounded-2xl text-xs overflow-auto max-h-[480px] font-mono shadow-inner border border-[#1E293B]">
+                        {JSON.stringify(drawerBill.aiExtractedData || drawerBill, null, 2)}
+                      </pre>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Drawer Footer */}
+            <div className="p-4 border-t border-[#E2E8F0] bg-[#F8FAFC] flex justify-end">
+              <button
+                onClick={closeDrawer}
+                className="px-5 py-2.5 bg-white border border-[#E2E8F0] text-[#1E293B] font-bold text-xs rounded-xl hover:bg-white cursor-pointer"
+              >
+                Close Drawer
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
