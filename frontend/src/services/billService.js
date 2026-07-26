@@ -11,7 +11,14 @@ export const billService = {
         "Content-Type": "multipart/form-data",
       },
     }),
-  update: (id, data) => api.put(`/bills/${id}`, data),
+  update: (id, data) => {
+    if (data instanceof FormData) {
+      return api.put(`/bills/${id}`, data, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+    }
+    return api.put(`/bills/${id}`, data);
+  },
   delete: (id) => api.delete(`/bills/${id}`),
   process: (id) => api.post(`/bills/${id}/process`),
 };

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { billService } from "../services/billService";
 import { facilityService } from "../services/facilityService";
 import { formatCurrency, formatDate, getStatusBadgeClass } from "../utils/helpers";
@@ -29,7 +30,53 @@ const MONTHS = [
   "July", "August", "September", "October", "November", "December"
 ];
 
-const BILL_TYPES = ["Electricity", "Water", "Natural Gas", "Diesel", "Dual Utility", "Other"];
+const BILL_TYPES = ["Auto Detect", "Electricity", "Water", "Natural Gas", "Diesel", "Dual Utility", "Other"];
+
+const getUtilityChipClass = (type) => {
+  const lower = String(type || "").toLowerCase();
+  if (lower.includes("electric")) return "bg-blue-500/10 text-blue-600 border border-blue-500/20";
+  if (lower.includes("water")) return "bg-cyan-500/10 text-cyan-600 border border-cyan-500/20";
+  if (lower.includes("gas")) return "bg-amber-500/10 text-amber-600 border border-amber-500/20";
+  if (lower.includes("diesel") || lower.includes("fuel")) return "bg-purple-500/10 text-purple-600 border border-purple-500/20";
+  if (lower.includes("auto")) return "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20";
+  return "bg-slate-500/10 text-slate-700 border border-slate-500/20";
+};
+
+const renderUtilityChips = (bill) => {
+  const utilities = bill.utilities || [];
+  if (utilities.length > 0) {
+    return (
+      <div className="flex flex-wrap gap-1.5 items-center">
+        {utilities.map((u, idx) => {
+          const type = u.utilityType || u.type || "Utility";
+          return (
+            <span key={idx} className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold ${getUtilityChipClass(type)}`}>
+              {type}
+            </span>
+          );
+        })}
+      </div>
+    );
+  }
+
+  const types = (bill.billType || "Auto Detect").split(",").map((t) => t.trim());
+  return (
+    <div className="flex flex-wrap gap-1.5 items-center">
+      {types.map((type, idx) => (
+        <span key={idx} className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold ${getUtilityChipClass(type)}`}>
+          {type}
+        </span>
+      ))}
+    </div>
+  );
+};
+
+const formatKeyToLabel = (key) => {
+  return key
+    .replace(/([A-Z])/g, " $1")
+    .replace(/^./, (str) => str.toUpperCase())
+    .trim();
+};
 
 const dispatchDataChanged = () => {
   window.dispatchEvent(new CustomEvent("ecoaudit-data-changed"));
@@ -42,7 +89,7 @@ const Bills = () => {
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
-  // Enterprise Filter States
+  // Filter States
   const [search, setSearch] = useState("");
   const [facilityFilter, setFacilityFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -54,11 +101,11 @@ const Bills = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 6;
 
-  // Modals state
+  // Create Modal state
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({
     facilityId: "",
-    billType: "Electricity",
+    billType: "Auto Detect",
     billMonth: MONTHS[new Date().getMonth()],
     billYear: new Date().getFullYear().toString(),
     billFile: null,
@@ -66,13 +113,14 @@ const Bills = () => {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
 
+  // Edit Modal state (for editing metadata & replacing file)
   const [showEditModal, setShowEditModal] = useState(false);
   const [editForm, setEditForm] = useState({
     facilityId: "",
-    billType: "Electricity",
+    billType: "Auto Detect",
     billMonth: "",
     billYear: "",
-    billFileUrl: "",
+    billFile: null,
   });
   const [editBillId, setEditBillId] = useState(null);
   const [editSubmitting, setEditSubmitting] = useState(false);
@@ -84,9 +132,10 @@ const Bills = () => {
   const [drawerLoading, setDrawerLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [previewUrl, setPreviewUrl] = useState("");
-  const [downloadUrlLoading, setDownloadUrlLoading] = useState(false);
 
-  // refs for polling
+  // Polling management
+  const [processingIds, setProcessingIds] = useState(new Set());
+  const pollingTimers = useRef({});
   const showDrawerRef = useRef(false);
   const drawerBillRef = useRef(null);
 
@@ -98,32 +147,33 @@ const Bills = () => {
     drawerBillRef.current = drawerBill;
   }, [drawerBill]);
 
-  const [processingIds, setProcessingIds] = useState(new Set());
-  const pollingTimers = useRef({});
-
-  useEffect(() => {
-    return () => {
-      Object.values(pollingTimers.current).forEach((timer) => clearInterval(timer));
-    };
-  }, []);
-
   const fetchData = async () => {
-    setLoading(true);
-    setError("");
     try {
-      const [billsRes, facilitiesRes] = await Promise.all([
+      setLoading(true);
+      setError("");
+      const [billsRes, facsRes] = await Promise.all([
         billService.getAll(),
         facilityService.getAll(),
       ]);
 
       if (billsRes.data?.success) {
-        setBills(billsRes.data.data || []);
+        const fetchedBills = billsRes.data.data || [];
+        setBills(fetchedBills);
+
+        // Resume polling for bills in PROCESSING state
+        fetchedBills.forEach((b) => {
+          if (b.status === "PROCESSING") {
+            setProcessingIds((prev) => new Set(prev).add(b.id));
+            startPolling(b.id);
+          }
+        });
       }
-      if (facilitiesRes.data?.success) {
-        setFacilities(facilitiesRes.data.data || []);
+
+      if (facsRes.data?.success) {
+        setFacilities(facsRes.data.data || []);
       }
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to fetch utility bills.");
+      setError(err.response?.data?.message || "Failed to load utility bill document data.");
     } finally {
       setLoading(false);
     }
@@ -131,28 +181,15 @@ const Bills = () => {
 
   useEffect(() => {
     fetchData();
+    return () => {
+      Object.values(pollingTimers.current).forEach(clearInterval);
+    };
   }, []);
 
-  useEffect(() => {
-    if (!loading && bills.length > 0) {
-      bills.forEach((bill) => {
-        if (bill.status === "PROCESSING" && !pollingTimers.current[bill.id]) {
-          setProcessingIds((prev) => new Set(prev).add(bill.id));
-          startPolling(bill.id);
-        }
-      });
-    }
-  }, [loading, bills.length]);
-
-  const handleFormChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
   const openCreateModal = () => {
-    console.log("Upload clicked");
     setForm({
-      facilityId: facilities.length > 0 ? facilities[0].id : "",
-      billType: "Electricity",
+      facilityId: facilities[0]?.id || "",
+      billType: "Auto Detect",
       billMonth: MONTHS[new Date().getMonth()],
       billYear: new Date().getFullYear().toString(),
       billFile: null,
@@ -161,20 +198,21 @@ const Bills = () => {
     setShowModal(true);
   };
 
+  const handleFormChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
   const handleCreateSubmit = async (e) => {
     e.preventDefault();
     setFormError("");
 
     if (!form.facilityId) {
-      setFormError("Please select a target facility.");
+      setFormError("Please select a facility for this bill.");
       return;
     }
-    if (!form.billMonth || !form.billYear) {
-      setFormError("Please select billing month and year.");
-      return;
-    }
+
     if (!form.billFile) {
-      setFormError("Please select a bill document file to upload.");
+      setFormError("Please select a utility bill document file to upload.");
       return;
     }
 
@@ -189,15 +227,15 @@ const Bills = () => {
 
       const res = await billService.create(formData);
       if (res.data?.success) {
-        setSuccessMsg("Document queued for processing! Trigger AI extraction to proceed.");
         setShowModal(false);
-        setForm({
-          facilityId: facilities.length > 0 ? facilities[0].id : "",
-          billType: "Electricity",
-          billMonth: MONTHS[new Date().getMonth()],
-          billYear: new Date().getFullYear().toString(),
-          billFile: null,
-        });
+        setSuccessMsg("Utility bill uploaded successfully! Auto AI extraction initiated.");
+        
+        // Auto-trigger AI processing if created with PENDING status
+        const newBillId = res.data.data.id;
+        if (newBillId) {
+          handleProcessBill(newBillId);
+        }
+
         fetchData();
         dispatchDataChanged();
         setTimeout(() => setSuccessMsg(""), 4000);
@@ -208,6 +246,80 @@ const Bills = () => {
       setFormError(err.response?.data?.message || "Error uploading file.");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const openEditModal = (bill) => {
+    setEditBillId(bill.id);
+    setEditForm({
+      facilityId: bill.facilityId || "",
+      billType: bill.billType || "Auto Detect",
+      billMonth: bill.billMonth || MONTHS[0],
+      billYear: (bill.billYear || new Date().getFullYear()).toString(),
+      billFile: null,
+    });
+    setEditFormError("");
+    setShowEditModal(true);
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    setEditFormError("");
+
+    setEditSubmitting(true);
+    try {
+      let payload;
+      if (editForm.billFile) {
+        payload = new FormData();
+        payload.append("facilityId", editForm.facilityId);
+        payload.append("billType", editForm.billType);
+        payload.append("billMonth", editForm.billMonth);
+        payload.append("billYear", editForm.billYear);
+        payload.append("billFile", editForm.billFile);
+      } else {
+        payload = {
+          facilityId: editForm.facilityId,
+          billType: editForm.billType,
+          billMonth: editForm.billMonth,
+          billYear: editForm.billYear,
+        };
+      }
+
+      const res = await billService.update(editBillId, payload);
+      if (res.data?.success) {
+        setShowEditModal(false);
+        setSuccessMsg("Utility bill record updated successfully.");
+        fetchData();
+        dispatchDataChanged();
+        setTimeout(() => setSuccessMsg(""), 4000);
+      } else {
+        setEditFormError(res.data?.message || "Failed to update bill record.");
+      }
+    } catch (err) {
+      setEditFormError(err.response?.data?.message || "Error updating bill record.");
+    } finally {
+      setEditSubmitting(false);
+    }
+  };
+
+  const handleDeleteBill = async (billId) => {
+    if (!window.confirm("Are you sure you want to delete this utility bill document record?")) {
+      return;
+    }
+
+    try {
+      const res = await billService.delete(billId);
+      if (res.data?.success) {
+        setSuccessMsg("Utility bill deleted successfully.");
+        if (showDrawer && drawerBill?.id === billId) {
+          closeDrawer();
+        }
+        fetchData();
+        dispatchDataChanged();
+        setTimeout(() => setSuccessMsg(""), 4000);
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to delete utility bill record.");
     }
   };
 
@@ -311,12 +423,12 @@ const Bills = () => {
     return bill.utilities.reduce((sum, u) => sum + (u.carbonEmission || 0), 0);
   };
 
-  // Derived filter queue logic
+  // Filter logic
   const filteredBills = useMemo(() => {
     return bills.filter((b) => {
       if (facilityFilter !== "ALL" && b.facilityId !== facilityFilter) return false;
       if (statusFilter !== "ALL" && b.status !== statusFilter) return false;
-      if (typeFilter !== "ALL" && b.billType?.toLowerCase() !== typeFilter.toLowerCase()) return false;
+      if (typeFilter !== "ALL" && !b.billType?.toLowerCase().includes(typeFilter.toLowerCase())) return false;
       if (monthFilter !== "ALL" && b.billMonth?.toLowerCase() !== monthFilter.toLowerCase()) return false;
       if (yearFilter !== "ALL" && b.billYear?.toString() !== yearFilter) return false;
 
@@ -348,274 +460,341 @@ const Bills = () => {
 
   // Pagination Logic
   const totalPages = Math.ceil(filteredBills.length / pageSize) || 1;
-  const paginatedBills = filteredBills.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
+  const paginatedBills = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredBills.slice(start, start + pageSize);
+  }, [filteredBills, currentPage]);
 
-  // Summary Metrics Counts
-  const pendingCount = bills.filter(b => b.status === "PENDING").length;
-  const processingCount = bills.filter(b => b.status === "PROCESSING").length;
-  const completedCount = bills.filter(b => b.status === "COMPLETED").length;
-  const failedCount = bills.filter(b => b.status === "FAILED").length;
+  const yearOptions = useMemo(() => {
+    const years = new Set(bills.map((b) => b.billYear).filter(Boolean));
+    years.add(new Date().getFullYear());
+    return Array.from(years).sort((a, b) => b - a);
+  }, [bills]);
 
   return (
-    <div className="space-y-8">
-      {/* HEADER SECTION */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 pb-6 border-b border-[#E2E8F0]">
+    <div className="space-y-6 animate-fadeIn text-[#152A38] pb-16">
+
+      {/* PAGE HEADER */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#F7F6EE] border border-[#D4D4C4] rounded-[24px] p-5 sm:p-6 shadow-xs">
         <div>
-          <h1 className="text-3xl font-extrabold text-[#1E293B] tracking-tight">AI Document Processing Queue</h1>
-          <p className="text-sm font-medium text-[#64748B] mt-1">Manage uploaded utility bills, AI extraction results and carbon analysis.</p>
+          <div className="flex items-center gap-2 text-[#2F5241] mb-1">
+            <Sparkles className="w-4 h-4 shrink-0" />
+            <span className="text-[10px] font-extrabold uppercase tracking-widest">AI Document Ingestion</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#152A38] tracking-tight">Utility Bill Documents</h1>
+          <p className="text-xs font-semibold text-[#7A8597] mt-1 max-w-xl">
+            Automated multi-utility OCR extraction, Scope 1 &amp; 2 carbon accounting, and document verification.
+          </p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2.5 shrink-0">
           <button
-            className="px-4 py-2.5 bg-white border border-[#E2E8F0] text-[#1E293B] font-bold text-xs rounded-2xl hover:bg-[#F8FAFC] transition-colors flex items-center gap-2 shadow-xs cursor-pointer"
             onClick={fetchData}
+            className="p-2.5 bg-[#EEEDDF] border border-[#D4D4C4] text-[#7A8597] hover:text-[#152A38] hover:bg-[#E4E3D6] rounded-2xl transition-all cursor-pointer active:scale-95"
+            title="Refresh Documents"
           >
-            <RefreshCw className="w-4 h-4" />
-            <span>Refresh</span>
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-[#2F5241]" : ""}`} />
           </button>
           <button
-            className="px-5 py-2.5 bg-[#2E7D32] text-white font-extrabold text-xs rounded-2xl shadow-md shadow-[#2E7D32]/25 hover:bg-[#256829] transition-colors flex items-center gap-2 cursor-pointer"
             onClick={openCreateModal}
+            className="px-4 py-2.5 bg-[#2F5241] hover:bg-[#234035] active:scale-95 text-[#E4E5DB] font-extrabold text-xs rounded-2xl shadow-xs transition-all flex items-center gap-2 cursor-pointer"
           >
-            <Upload className="w-4 h-4" />
-            <span>Upload Utility Bill</span>
+            <Upload className="w-3.5 h-3.5 stroke-[2.5]" />
+            <span>Upload Bill</span>
           </button>
         </div>
       </div>
+
+      {/* ALERT NOTIFICATIONS */}
+      {successMsg && (
+        <div className="p-4 rounded-2xl bg-[#EAF2ED] border border-[#2F5241]/25 text-[#2F5241] text-xs font-bold flex items-center justify-between animate-fadeIn shadow-xs">
+          <div className="flex items-center gap-2.5">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>{successMsg}</span>
+          </div>
+          <button onClick={() => setSuccessMsg("")} className="text-[#2F5241] hover:opacity-70 cursor-pointer">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {error && (
-        <div className="p-5 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-sm font-semibold flex items-center gap-3">
-          <AlertTriangle className="w-5 h-5 shrink-0" />
-          <span>{error}</span>
-        </div>
-      )}
-      {successMsg && (
-        <div className="p-5 rounded-2xl bg-emerald-50 border border-emerald-200 text-[#2E7D32] text-sm font-semibold flex items-center gap-3">
-          <CheckCircle2 className="w-5 h-5 shrink-0" />
-          <span>{successMsg}</span>
+        <div className="p-4 rounded-2xl bg-red-50 border border-red-200/60 text-red-600 text-xs font-bold flex items-center justify-between animate-fadeIn shadow-xs">
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+          <button onClick={() => setError("")} className="text-red-600 hover:opacity-70 cursor-pointer">
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 
-      {/* QUEUE STATUS STRIP CONTAINER */}
-      <div className="bg-white border border-[#E2E8F0] rounded-3xl p-6 shadow-xs flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-[#E7F3E8] text-[#2E7D32] flex items-center justify-center shrink-0">
-            <ShieldCheck className="w-6 h-6" />
-          </div>
-          <div>
-            <span className="text-sm font-extrabold text-[#1E293B]">Google Gemini OCR Processing Status</span>
-            <p className="text-xs font-medium text-[#64748B] mt-1">Automated document parsing & field verification</p>
-          </div>
+      {/* FILTER SEARCH WORKSPACE */}
+      <div className="bg-[#F7F6EE] border border-[#D4D4C4] rounded-[24px] p-4 sm:p-5 shadow-xs space-y-3">
+        {/* Search Bar */}
+        <div className="relative">
+          <Search className="w-3.5 h-3.5 absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
+          <input
+            type="text"
+            placeholder="Search by consumer name, meter #, facility, or billing month..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full h-10 pl-10 pr-4 bg-[#EEEDDF] border border-[#D4D4C4] rounded-full text-xs font-semibold text-[#152A38] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#2F5241] focus:ring-1 focus:ring-[#2F5241]/20 transition-all"
+          />
         </div>
 
-        <div className="grid grid-cols-4 gap-4 text-center w-full md:w-auto">
-          <div className="px-5 py-2.5 bg-[#F8FAFC] rounded-2xl border border-[#E2E8F0]">
-            <span className="text-xs font-bold text-[#64748B] uppercase block">Processed</span>
-            <span className="text-base font-extrabold text-[#2E7D32]">● {completedCount}</span>
-          </div>
-          <div className="px-5 py-2.5 bg-[#F8FAFC] rounded-2xl border border-[#E2E8F0]">
-            <span className="text-xs font-bold text-[#64748B] uppercase block">Pending</span>
-            <span className="text-base font-extrabold text-amber-600">● {pendingCount}</span>
-          </div>
-          <div className="px-5 py-2.5 bg-[#F8FAFC] rounded-2xl border border-[#E2E8F0]">
-            <span className="text-xs font-bold text-[#64748B] uppercase block">Processing</span>
-            <span className="text-base font-extrabold text-[#1565C0]">● {processingCount}</span>
-          </div>
-          <div className="px-5 py-2.5 bg-[#F8FAFC] rounded-2xl border border-[#E2E8F0]">
-            <span className="text-xs font-bold text-[#64748B] uppercase block">Failed</span>
-            <span className="text-base font-extrabold text-red-600">● {failedCount}</span>
-          </div>
+        {/* Filter Dropdowns */}
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={facilityFilter}
+            onChange={(e) => setFacilityFilter(e.target.value)}
+            className="h-9 px-3 bg-[#EEEDDF] border border-[#D4D4C4] rounded-xl text-xs font-semibold text-[#152A38] focus:outline-none focus:border-[#2F5241] cursor-pointer"
+          >
+            <option value="ALL">All Facilities</option>
+            {facilities.map((f) => (
+              <option key={f.id} value={f.id}>{f.name}</option>
+            ))}
+          </select>
+
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="h-9 px-3 bg-[#EEEDDF] border border-[#D4D4C4] rounded-xl text-xs font-semibold text-[#152A38] focus:outline-none focus:border-[#2F5241] cursor-pointer"
+          >
+            <option value="ALL">All Statuses</option>
+            <option value="COMPLETED">Completed</option>
+            <option value="PROCESSING">Processing</option>
+            <option value="PENDING">Pending</option>
+            <option value="FAILED">Failed</option>
+          </select>
+
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className="h-9 px-3 bg-[#EEEDDF] border border-[#D4D4C4] rounded-xl text-xs font-semibold text-[#152A38] focus:outline-none focus:border-[#2F5241] cursor-pointer"
+          >
+            <option value="ALL">All Utility Types</option>
+            {BILL_TYPES.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+
+          <select
+            value={monthFilter}
+            onChange={(e) => setMonthFilter(e.target.value)}
+            className="h-9 px-3 bg-[#EEEDDF] border border-[#D4D4C4] rounded-xl text-xs font-semibold text-[#152A38] focus:outline-none focus:border-[#2F5241] cursor-pointer"
+          >
+            <option value="ALL">All Months</option>
+            {MONTHS.map((m) => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </select>
+
+          <select
+            value={yearFilter}
+            onChange={(e) => setYearFilter(e.target.value)}
+            className="h-9 px-3 bg-[#EEEDDF] border border-[#D4D4C4] rounded-xl text-xs font-semibold text-[#152A38] focus:outline-none focus:border-[#2F5241] cursor-pointer"
+          >
+            <option value="ALL">All Years</option>
+            {yearOptions.map((y) => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
+
+          <button
+            onClick={resetFilters}
+            className="h-9 px-4 bg-[#F7F6EE] border border-[#D4D4C4] text-[#7A8597] hover:text-[#152A38] hover:bg-[#EEEDDF] text-xs font-bold rounded-xl transition-all cursor-pointer active:scale-95"
+          >
+            Reset
+          </button>
+
+          <span className="ml-auto text-xs font-semibold text-[#7A8597] hidden sm:block">
+            {filteredBills.length} {filteredBills.length === 1 ? "document" : "documents"} found
+          </span>
         </div>
       </div>
 
-      {/* SEARCH & FILTERS BAR */}
-      <div className="bg-white border border-[#E2E8F0] rounded-3xl p-5 shadow-xs">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
-          {/* Search */}
-          <div className="relative md:col-span-2">
-            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#94A3B8]">
-              <Search className="w-5 h-5" />
-            </div>
-            <input
-              type="text"
-              placeholder="Search documents, consumer, meter..."
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-              className="w-full h-11 pl-11 pr-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl text-sm font-medium text-[#1E293B] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#2E7D32] focus:ring-2 focus:ring-[#2E7D32]/20"
-            />
-          </div>
-
-          {/* Facility */}
-          <div>
-            <select
-              value={facilityFilter}
-              onChange={(e) => { setFacilityFilter(e.target.value); setCurrentPage(1); }}
-              className="w-full h-11 px-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl text-sm font-bold text-[#1E293B] focus:outline-none focus:border-[#2E7D32]"
-            >
-              <option value="ALL">All Facilities</option>
-              {facilities.map((f) => (
-                <option key={f.id} value={f.id}>{f.name}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Bill Type */}
-          <div>
-            <select
-              value={typeFilter}
-              onChange={(e) => { setTypeFilter(e.target.value); setCurrentPage(1); }}
-              className="w-full h-11 px-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl text-sm font-bold text-[#1E293B] focus:outline-none focus:border-[#2E7D32]"
-            >
-              <option value="ALL">All Utilities</option>
-              {BILL_TYPES.map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Status */}
-          <div>
-            <select
-              value={statusFilter}
-              onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
-              className="w-full h-11 px-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl text-sm font-bold text-[#1E293B] focus:outline-none focus:border-[#2E7D32]"
-            >
-              <option value="ALL">All Statuses</option>
-              <option value="PENDING">PENDING</option>
-              <option value="PROCESSING">PROCESSING</option>
-              <option value="COMPLETED">COMPLETED</option>
-              <option value="FAILED">FAILED</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* DOCUMENT CARDS LIST (Spacious, prominent numbers, highly readable) */}
+      {/* DOCUMENT CARDS LIST */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center min-h-[40vh] py-12 text-[#64748B]">
-          <RefreshCw className="w-8 h-8 animate-spin text-[#2E7D32] mb-3" />
-          <p className="text-base font-bold">Syncing utility bill document queue...</p>
+        <div className="bg-[#F7F6EE] border border-[#D4D4C4] rounded-[24px] p-16 text-center flex flex-col items-center justify-center space-y-3">
+          <RefreshCw className="w-7 h-7 animate-spin text-[#2F5241]" />
+          <p className="text-xs font-bold text-[#7A8597]">Loading utility bill document records...</p>
         </div>
       ) : paginatedBills.length === 0 ? (
-        <div className="bg-white border border-[#E2E8F0] rounded-3xl p-12 text-center space-y-4">
-          <FileText className="w-12 h-12 text-[#94A3B8] mx-auto" />
-          <h3 className="text-base font-extrabold text-[#1E293B]">No utility bills uploaded yet.</h3>
-          <p className="text-sm font-medium text-[#64748B] max-w-md mx-auto">Upload your first utility bill document to begin AI-powered extraction and carbon accounting.</p>
+        <div className="bg-[#F7F6EE] border border-[#D4D4C4] rounded-[24px] p-16 text-center space-y-4">
+          <div className="w-14 h-14 rounded-2xl bg-[#EEEDDF] flex items-center justify-center mx-auto">
+            <FileText className="w-7 h-7 text-[#94A3B8]" />
+          </div>
+          <div>
+            <h3 className="text-sm font-extrabold text-[#152A38]">No utility bill documents found</h3>
+            <p className="text-xs font-medium text-[#7A8597] mt-1">Upload a new utility bill document or adjust your filter criteria.</p>
+          </div>
           <button
             onClick={openCreateModal}
-            className="px-5 py-2.5 bg-[#2E7D32] text-white font-extrabold text-xs rounded-2xl shadow-xs hover:bg-[#256829] cursor-pointer"
+            className="px-5 py-2.5 bg-[#2F5241] text-[#E4E5DB] font-extrabold text-xs rounded-xl shadow-xs hover:bg-[#234035] cursor-pointer transition-all active:scale-95"
           >
             Upload Bill Document
           </button>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {paginatedBills.map((bill) => {
             const totalCarbon = getBillCarbon(bill);
 
-            let aiSummary = "Utility bill processing pending. Process document to trigger carbon extraction.";
-            if (bill.status === "COMPLETED") {
-              if (bill.billType?.toUpperCase().includes("ELEC")) {
-                aiSummary = "Electricity consumption is the primary emissions contributor to this invoice.";
-              } else if (bill.billType?.toUpperCase().includes("GAS") || bill.billType?.toUpperCase().includes("FUEL")) {
-                aiSummary = "Natural Gas usage accounts for the majority of calculated carbon output.";
-              } else if (bill.billType?.toUpperCase().includes("WATER")) {
-                aiSummary = "Water consumption generated minimal carbon emissions.";
-              } else {
-                aiSummary = `AI Extraction complete. Extracted utility emissions verified at ${totalCarbon.toFixed(2)} kg CO₂e.`;
-              }
+            let aiSummary = "";
+            if (bill.status === "PROCESSING") {
+              aiSummary = "AI Vision OCR is actively parsing invoice document structure, line items, and utility consumption.";
             } else if (bill.status === "FAILED") {
-              aiSummary = "AI Extraction failed for this document. Please verify image quality and retry.";
-            } else if (bill.status === "PROCESSING") {
-              aiSummary = "AI Vision OCR is actively parsing and extracting utility metadata fields.";
+              aiSummary = "AI extraction failed for this document. Please verify or replace the bill file to reprocess.";
+            } else if (bill.status === "PENDING") {
+              aiSummary = "Utility bill uploaded and pending AI extraction. Click 'Process AI' to calculate carbon emissions.";
+            } else {
+              if (bill.aiExtractedData?.aiSummary || bill.aiExtractedData?.summary) {
+                aiSummary = bill.aiExtractedData.aiSummary || bill.aiExtractedData.summary;
+              } else {
+                const utilities = bill.utilities || [];
+                if (utilities.length > 0) {
+                  const breakdown = utilities.map((u) => `${u.utilityType || 'Utility'} (${u.usage || 0} ${u.unit || ''})`).join(", ");
+                  aiSummary = `AI OCR verified ${utilities.length} utility item(s) [${breakdown}] for ${bill.facility?.name || 'facility'}, generating ${totalCarbon.toFixed(2)} kg CO2e emissions.`;
+                } else {
+                  aiSummary = `AI Extraction verified for ${bill.facility?.name || 'facility'}. Calculated ${totalCarbon.toFixed(2)} kg CO2e total emissions for ${bill.billMonth || ''} ${bill.billYear || ''}.`;
+                }
+              }
             }
+
+            const isProcessing = processingIds.has(bill.id);
 
             return (
               <div
                 key={bill.id}
-                className="bg-white border border-[#E2E8F0] rounded-3xl p-7 shadow-xs hover:border-[#2E7D32]/40 transition-all space-y-6"
+                className="bg-[#F7F6EE] border border-[#D4D4C4] rounded-[24px] p-5 sm:p-6 shadow-xs hover:border-[#2F5241]/40 hover:shadow-sm transition-all duration-200 space-y-4"
               >
                 {/* Header Row */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E2E8F0]">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-[#E7F3E8] text-[#2E7D32] flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
-                      <FileText className="w-6 h-6" />
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                  <div className="flex items-start gap-3.5 min-w-0 flex-1">
+                    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border ${
+                      bill.status === "COMPLETED" ? "bg-[#EAF2ED] text-[#2F5241] border-[#2F5241]/15" :
+                      bill.status === "PROCESSING" ? "bg-blue-50 text-blue-600 border-blue-200/50" :
+                      bill.status === "FAILED" ? "bg-red-50 text-red-500 border-red-200/50" :
+                      "bg-[#EEEDDF] text-[#7A8597] border-[#D4D4C4]"
+                    }`}>
+                      {isProcessing ? (
+                        <RefreshCw className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <FileText className="w-5 h-5" />
+                      )}
                     </div>
-                    <div>
-                      <div className="flex items-center gap-3">
-                        <h3 className="text-xl font-extrabold text-[#1E293B]">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2.5 flex-wrap mb-0.5">
+                        <h3 className="text-sm font-extrabold text-[#152A38] truncate">
                           {bill.facility?.name || "Target Facility"}
                         </h3>
-                        <span className="text-xs font-bold bg-[#F8FAFC] border border-[#E2E8F0] text-[#64748B] px-3 py-1 rounded-full uppercase">
-                          {bill.billType || "Utility"}
-                        </span>
+                        {renderUtilityChips(bill)}
                       </div>
-                      <p className="text-sm font-medium text-[#64748B] mt-1">
-                        Period: <strong className="text-[#1E293B] font-bold">{bill.billMonth || ""} {bill.billYear || ""}</strong> | Uploaded: {formatDate(bill.createdAt)}
+                      <p className="text-[11px] font-semibold text-[#7A8597]">
+                        <span className="text-[#152A38] font-bold">{bill.billMonth || ""} {bill.billYear || ""}</span>
+                        <span className="mx-1.5 text-[#D4D4C4]">•</span>
+                        Uploaded {formatDate(bill.createdAt)}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 self-end sm:self-auto">
-                    <span className={`px-3.5 py-1.5 rounded-full text-xs font-extrabold ${getStatusBadgeClass(bill.status)}`}>
+                  <div className="flex items-center gap-2 shrink-0 self-end sm:self-start">
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-extrabold uppercase ${getStatusBadgeClass(bill.status)}`}>
                       {bill.status}
                     </span>
                   </div>
                 </div>
 
                 {/* Metrics Pill Grid */}
-                <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl p-5 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+                <div className="bg-[#EEEDDF] border border-[#DDDDD0] rounded-2xl p-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
                   <div>
-                    <span className="text-xs font-bold text-[#64748B] uppercase tracking-wider block mb-1">CARBON EMISSION</span>
-                    <div className="text-base font-extrabold text-[#EF4444]">
-                      {bill.status === "COMPLETED" ? `${totalCarbon.toFixed(2)} kg` : "Pending"}
+                    <span className="text-[9.5px] font-extrabold text-[#7A8597] uppercase tracking-wider block">CARBON EMISSION</span>
+                    <div className="text-sm font-extrabold text-[#EF4444] mt-0.5">
+                      {bill.status === "COMPLETED" ? `${totalCarbon.toFixed(2)} kg` : <span className="text-[#94A3B8] text-xs">Pending</span>}
                     </div>
                   </div>
                   <div>
-                    <span className="text-xs font-bold text-[#64748B] uppercase tracking-wider block mb-1">TOTAL AMOUNT</span>
-                    <div className="text-base font-extrabold text-[#1E293B]">
-                      {bill.totalAmount != null ? formatCurrency(bill.totalAmount) : "—"}
+                    <span className="text-[9.5px] font-extrabold text-[#7A8597] uppercase tracking-wider block">TOTAL AMOUNT</span>
+                    <div className="text-sm font-extrabold text-[#152A38] mt-0.5">
+                      {bill.totalAmount != null ? formatCurrency(bill.totalAmount) : <span className="text-[#94A3B8]">-</span>}
                     </div>
                   </div>
                   <div>
-                    <span className="text-xs font-bold text-[#64748B] uppercase tracking-wider block mb-1">UPLOAD DATE</span>
-                    <div className="text-base font-extrabold text-[#1E293B]">{formatDate(bill.createdAt)}</div>
+                    <span className="text-[9.5px] font-extrabold text-[#7A8597] uppercase tracking-wider block">CONSUMER / METER</span>
+                    <div className="text-xs font-extrabold text-[#152A38] mt-0.5 truncate">
+                      {bill.consumerName || bill.meterNumber || <span className="text-[#94A3B8]">-</span>}
+                    </div>
                   </div>
                   <div>
-                    <span className="text-xs font-bold text-[#64748B] uppercase tracking-wider block mb-1">AI CONFIDENCE</span>
-                    <div className="text-base font-extrabold text-[#2E7D32]">
-                      {bill.status === "COMPLETED" ? "96.5%" : "N/A"}
+                    <span className="text-[9.5px] font-extrabold text-[#7A8597] uppercase tracking-wider block">AI CONFIDENCE</span>
+                    <div className="text-sm font-extrabold text-[#2F5241] mt-0.5">
+                      {bill.status === "COMPLETED" ? "96.5%" : <span className="text-[#94A3B8] text-xs">N/A</span>}
                     </div>
                   </div>
                 </div>
 
                 {/* AI Summary Banner & Actions */}
-                <div className="bg-[#E7F3E8] border border-[#2E7D32]/20 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-3 flex-1">
-                    <div className="w-8 h-8 rounded-xl bg-[#2E7D32] text-white flex items-center justify-center shrink-0">
-                      <Sparkles className="w-4 h-4" />
+                <div className={`rounded-2xl p-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 ${
+                  bill.status === "FAILED"
+                    ? "bg-red-50 border border-red-200/60"
+                    : bill.status === "PROCESSING"
+                    ? "bg-blue-50 border border-blue-200/50"
+                    : "bg-[#EAF2ED] border border-[#2F5241]/20"
+                }`}>
+                  <div className="flex items-start gap-2.5 flex-1 min-w-0">
+                    <div className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
+                      bill.status === "FAILED" ? "bg-red-100 text-red-500" :
+                      bill.status === "PROCESSING" ? "bg-blue-100 text-blue-600" :
+                      "bg-[#2F5241] text-[#E4E5DB]"
+                    }`}>
+                      {bill.status === "PROCESSING" ? (
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-3.5 h-3.5" />
+                      )}
                     </div>
-                    <p className="text-xs md:text-sm font-medium text-[#1E293B] leading-relaxed mb-0">
-                      <strong className="text-[#2E7D32] font-extrabold">AI Summary:</strong> {aiSummary}
+                    <p className="text-[11px] font-semibold text-[#152A38] leading-relaxed">
+                      <strong className={`font-extrabold ${bill.status === "FAILED" ? "text-red-500" : bill.status === "PROCESSING" ? "text-blue-600" : "text-[#2F5241]"}`}>
+                        AI {bill.status === "FAILED" ? "Error:" : bill.status === "PROCESSING" ? "Processing:" : "Summary:"}
+                      </strong>{" "}
+                      {aiSummary}
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-3 shrink-0 self-end sm:self-auto">
-                    {bill.status === "PENDING" && (
+                  {/* ACTION BUTTONS */}
+                  <div className="flex items-center gap-2 flex-wrap shrink-0 self-end lg:self-auto">
+                    {(bill.status === "PENDING" || bill.status === "FAILED") && (
                       <button
                         onClick={() => handleProcessBill(bill.id)}
-                        disabled={processingIds.has(bill.id)}
-                        className="px-4 py-2.5 bg-[#2E7D32] text-white font-extrabold text-xs rounded-xl shadow-xs hover:bg-[#256829] cursor-pointer flex items-center gap-2"
+                        disabled={isProcessing}
+                        className="px-3.5 py-1.5 bg-[#2F5241] text-[#E4E5DB] font-extrabold text-[11px] rounded-xl shadow-xs hover:bg-[#234035] cursor-pointer flex items-center gap-1.5 transition-all active:scale-95 disabled:opacity-60"
                       >
-                        <Zap className="w-4 h-4" />
-                        <span>Process AI →</span>
+                        <Zap className="w-3 h-3" />
+                        <span>{bill.status === "FAILED" ? "Reprocess AI" : "Process AI"}</span>
                       </button>
                     )}
+
+                    <button
+                      onClick={() => openEditModal(bill)}
+                      className="px-3 py-1.5 bg-[#F7F6EE] border border-[#D4D4C4] text-[#152A38] hover:bg-[#EEEDDF] font-extrabold text-[11px] rounded-xl transition-all cursor-pointer flex items-center gap-1.5 active:scale-95"
+                      title="Edit bill metadata or replace document file"
+                    >
+                      <Edit3 className="w-3 h-3 text-[#7A8597]" />
+                      <span>Edit</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleDeleteBill(bill.id)}
+                      className="px-3 py-1.5 bg-[#F7F6EE] border border-red-200 text-red-500 hover:bg-red-50 font-extrabold text-[11px] rounded-xl transition-all cursor-pointer flex items-center gap-1.5 active:scale-95"
+                      title="Delete bill record"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+
                     <button
                       onClick={() => openDrawer(bill.id)}
-                      className="px-4 py-2.5 bg-white border border-[#2E7D32] text-[#2E7D32] font-extrabold text-xs rounded-xl hover:bg-[#E7F3E8] transition-colors cursor-pointer"
+                      className="px-3.5 py-1.5 bg-[#F7F6EE] border border-[#2F5241]/30 text-[#2F5241] font-extrabold text-[11px] rounded-xl hover:bg-[#EAF2ED] transition-all cursor-pointer active:scale-95"
                     >
                       View Analysis →
                     </button>
@@ -629,19 +808,19 @@ const Bills = () => {
 
       {/* PAGINATION FOOTER */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-4">
+        <div className="flex items-center justify-between pt-2">
           <button
-            className="px-4 py-2 bg-white border border-[#E2E8F0] text-[#1E293B] font-bold text-xs rounded-xl disabled:opacity-50"
+            className="px-4 py-2 bg-[#F7F6EE] border border-[#D4D4C4] text-[#152A38] font-extrabold text-xs rounded-xl disabled:opacity-50 cursor-pointer hover:bg-[#EEEDDF] transition-all active:scale-95"
             disabled={currentPage === 1}
             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
           >
             ← Previous
           </button>
-          <span className="text-xs font-semibold text-[#64748B]">
-            Page <strong>{currentPage}</strong> of <strong>{totalPages}</strong>
+          <span className="text-xs font-semibold text-[#7A8597]">
+            Page <strong className="text-[#152A38]">{currentPage}</strong> of <strong className="text-[#152A38]">{totalPages}</strong>
           </span>
           <button
-            className="px-4 py-2 bg-white border border-[#E2E8F0] text-[#1E293B] font-bold text-xs rounded-xl disabled:opacity-50"
+            className="px-4 py-2 bg-[#F7F6EE] border border-[#D4D4C4] text-[#152A38] font-extrabold text-xs rounded-xl disabled:opacity-50 cursor-pointer hover:bg-[#EEEDDF] transition-all active:scale-95"
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
           >
@@ -649,303 +828,390 @@ const Bills = () => {
           </button>
         </div>
       )}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl">
-            <h2 className="text-xl font-bold mb-4">Upload Utility Bill</h2>
+
+      {/* UPLOAD BILL MODAL */}
+      {showModal && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-fadeIn">
+          <div className="w-full max-w-xl rounded-[24px] bg-[#F7F6EE] border border-[#D4D4C4] p-5 sm:p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-[#D4D4C4]/60">
+              <div>
+                <h2 className="text-base font-extrabold text-[#152A38]">Upload Utility Bill Document</h2>
+                <p className="text-[11px] font-semibold text-[#7A8597] mt-0.5">AI will auto-extract and classify all utility data from the document.</p>
+              </div>
+              <button onClick={() => setShowModal(false)} className="p-1.5 text-[#94A3B8] hover:text-[#152A38] rounded-xl hover:bg-[#EEEDDF] transition-colors cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
             <form onSubmit={handleCreateSubmit} className="space-y-4">
               {formError && (
-                <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-red-600 text-sm">
+                <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-red-600 text-xs font-semibold">
                   {formError}
                 </div>
               )}
 
-              <div className="space-y-4">
-
+              <div className="space-y-3 text-xs">
                 <div>
-                  <label className="block mb-2 font-semibold">
-                    Facility
-                  </label>
-
+                  <label className="block mb-1.5 font-extrabold text-[#152A38]">Facility *</label>
                   <select
                     name="facilityId"
                     value={form.facilityId}
                     onChange={handleFormChange}
-                    className="w-full border rounded-xl px-4 py-3"
+                    className="w-full bg-[#EEEDDF] border border-[#D4D4C4] rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#152A38] focus:outline-none focus:border-[#2F5241]"
                     required
                   >
-                    <option value="">
-                      Select Facility
-                    </option>
-
-                    {facilities.map(f => (
-                      <option
-                        key={f.id}
-                        value={f.id}
-                      >
-                        {f.name}
-                      </option>
+                    <option value="">Select Facility</option>
+                    {facilities.map((f) => (
+                      <option key={f.id} value={f.id}>{f.name}</option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block mb-2 font-semibold">
-                    Utility Type
-                  </label>
-
+                  <label className="block mb-1.5 font-extrabold text-[#152A38]">Utility Type Detection</label>
                   <select
                     name="billType"
                     value={form.billType}
                     onChange={handleFormChange}
-                    className="w-full border rounded-xl px-4 py-3"
+                    className="w-full bg-[#EEEDDF] border border-[#D4D4C4] rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#152A38] focus:outline-none focus:border-[#2F5241]"
                   >
-                    {BILL_TYPES.map(type => (
-                      <option
-                        key={type}
-                        value={type}
-                      >
-                        {type}
-                      </option>
+                    {BILL_TYPES.map((type) => (
+                      <option key={type} value={type}>{type}</option>
                     ))}
                   </select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block mb-2 font-semibold">
-                      Month
-                    </label>
-
+                    <label className="block mb-1.5 font-extrabold text-[#152A38]">Month *</label>
                     <select
                       name="billMonth"
                       value={form.billMonth}
                       onChange={handleFormChange}
-                      className="w-full border rounded-xl px-4 py-3"
+                      className="w-full bg-[#EEEDDF] border border-[#D4D4C4] rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#152A38] focus:outline-none focus:border-[#2F5241]"
                     >
-                      {MONTHS.map(month => (
-                        <option
-                          key={month}
-                          value={month}
-                        >
-                          {month}
-                        </option>
+                      {MONTHS.map((m) => (
+                        <option key={m} value={m}>{m}</option>
                       ))}
                     </select>
                   </div>
-
                   <div>
-                    <label className="block mb-2 font-semibold">
-                      Year
-                    </label>
-
+                    <label className="block mb-1.5 font-extrabold text-[#152A38]">Year *</label>
                     <input
                       type="number"
                       name="billYear"
                       value={form.billYear}
                       onChange={handleFormChange}
-                      className="w-full border rounded-xl px-4 py-3"
+                      className="w-full bg-[#EEEDDF] border border-[#D4D4C4] rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#152A38] focus:outline-none focus:border-[#2F5241]"
+                      required
                     />
                   </div>
-
                 </div>
 
                 <div>
-                  <label className="block mb-2 font-semibold">
-                    Upload Bill
-                  </label>
-
-                  <input
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    className="w-full border rounded-xl px-4 py-3"
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        billFile: e.target.files[0]
-                      })
-                    }
-                  />
+                  <label className="block mb-1.5 font-extrabold text-[#152A38]">Upload Bill File (.pdf, .png, .jpg) *</label>
+                  <div className="relative w-full bg-[#EEEDDF] border-2 border-dashed border-[#D4D4C4] rounded-2xl p-6 text-center hover:border-[#2F5241]/60 transition-all cursor-pointer group">
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                      onChange={(e) => setForm({ ...form, billFile: e.target.files[0] })}
+                      required
+                    />
+                    <Upload className="w-7 h-7 text-[#7A8597] group-hover:text-[#2F5241] mx-auto mb-2 transition-colors" />
+                    <p className="text-xs font-bold text-[#152A38] mb-1">
+                      {form.billFile ? form.billFile.name : "Click to select or drag & drop your document"}
+                    </p>
+                    <p className="text-[10px] font-semibold text-[#7A8597]">
+                      Supports PDF, PNG, JPG (Max 10MB)
+                    </p>
+                  </div>
                 </div>
-
               </div>
 
-              <div className="flex justify-end gap-3">
+              <div className="flex justify-end gap-3 pt-2 border-t border-[#D4D4C4]/60">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 rounded-xl border"
+                  className="px-4 py-2 rounded-xl border border-[#D4D4C4] bg-[#EEEDDF] text-[#152A38] font-bold text-xs hover:bg-[#E4E3D6] cursor-pointer transition-all active:scale-95"
                 >
                   Cancel
                 </button>
-
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-4 py-2 rounded-xl bg-green-600 text-white"
+                  className="px-5 py-2 rounded-xl bg-[#2F5241] text-[#E4E5DB] font-extrabold text-xs hover:bg-[#234035] cursor-pointer transition-all active:scale-95 shadow-xs disabled:opacity-60"
                 >
-                  {submitting ? "Uploading..." : "Upload"}
+                  {submitting ? "Uploading..." : "Upload & Parse"}
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
+      )}
+
+      {/* EDIT & REPLACE FILE MODAL */}
+      {showEditModal && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-fadeIn">
+          <div className="w-full max-w-xl rounded-[24px] bg-[#F7F6EE] border border-[#D4D4C4] p-5 sm:p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-[#D4D4C4]/60">
+              <div>
+                <h2 className="text-base font-extrabold text-[#152A38]">Edit Utility Bill Record</h2>
+                <p className="text-[11px] font-semibold text-[#7A8597] mt-0.5">Update bill metadata or replace the document file.</p>
+              </div>
+              <button onClick={() => setShowEditModal(false)} className="p-1.5 text-[#94A3B8] hover:text-[#152A38] rounded-xl hover:bg-[#EEEDDF] transition-colors cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              {editFormError && (
+                <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-red-600 text-xs font-semibold">
+                  {editFormError}
+                </div>
+              )}
+
+              <div className="space-y-3 text-xs">
+                <div>
+                  <label className="block mb-1.5 font-extrabold text-[#152A38]">Facility *</label>
+                  <select
+                    name="facilityId"
+                    value={editForm.facilityId}
+                    onChange={(e) => setEditForm({ ...editForm, facilityId: e.target.value })}
+                    className="w-full bg-[#EEEDDF] border border-[#D4D4C4] rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#152A38] focus:outline-none focus:border-[#2F5241]"
+                    required
+                  >
+                    <option value="">Select Facility</option>
+                    {facilities.map((f) => (
+                      <option key={f.id} value={f.id}>{f.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block mb-1.5 font-extrabold text-[#152A38]">Utility Type</label>
+                  <select
+                    name="billType"
+                    value={editForm.billType}
+                    onChange={(e) => setEditForm({ ...editForm, billType: e.target.value })}
+                    className="w-full bg-[#EEEDDF] border border-[#D4D4C4] rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#152A38] focus:outline-none focus:border-[#2F5241]"
+                  >
+                    {BILL_TYPES.map((type) => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block mb-1.5 font-extrabold text-[#152A38]">Month *</label>
+                    <select
+                      name="billMonth"
+                      value={editForm.billMonth}
+                      onChange={(e) => setEditForm({ ...editForm, billMonth: e.target.value })}
+                      className="w-full bg-[#EEEDDF] border border-[#D4D4C4] rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#152A38] focus:outline-none focus:border-[#2F5241]"
+                    >
+                      {MONTHS.map((m) => (
+                        <option key={m} value={m}>{m}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block mb-1.5 font-extrabold text-[#152A38]">Year *</label>
+                    <input
+                      type="number"
+                      name="billYear"
+                      value={editForm.billYear}
+                      onChange={(e) => setEditForm({ ...editForm, billYear: e.target.value })}
+                      className="w-full bg-[#EEEDDF] border border-[#D4D4C4] rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#152A38] focus:outline-none focus:border-[#2F5241]"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block mb-1.5 font-extrabold text-[#152A38]">Replace Document File (Optional)</label>
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    className="w-full bg-[#EEEDDF] border border-[#D4D4C4] rounded-xl px-3.5 py-2.5 text-xs text-[#152A38]"
+                    onChange={(e) => setEditForm({ ...editForm, billFile: e.target.files[0] })}
+                  />
+                  <p className="text-[11px] text-[#7A8597] mt-1.5 font-semibold">Uploading a new file will reset bill status to PENDING for AI reprocessing.</p>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2 border-t border-[#D4D4C4]/60">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2 rounded-xl border border-[#D4D4C4] bg-[#EEEDDF] text-[#152A38] font-bold text-xs hover:bg-[#E4E3D6] cursor-pointer transition-all active:scale-95"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editSubmitting}
+                  className="px-5 py-2 rounded-xl bg-[#2F5241] text-[#E4E5DB] font-extrabold text-xs hover:bg-[#234035] cursor-pointer transition-all active:scale-95 shadow-xs disabled:opacity-60"
+                >
+                  {editSubmitting ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>,
+        document.body
       )}
 
       {/* RIGHT-SIDE SLIDING ANALYSIS DRAWER WORKSPACE */}
-      {showDrawer && (
-        <div className="fixed inset-0 z-50 overflow-hidden bg-black/40 backdrop-blur-xs flex justify-end animate-fadeIn">
-          <div className="w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col justify-between overflow-y-auto">
+      {showDrawer && createPortal(
+        <div className="fixed inset-0 z-[100] overflow-hidden bg-black/50 backdrop-blur-xs flex justify-end animate-fadeIn">
+          <div
+            className="absolute inset-0 bg-transparent cursor-pointer"
+            onClick={closeDrawer}
+          />
+          <div className="relative z-10 w-full sm:w-[520px] md:w-[600px] lg:w-[660px] bg-[#F7F6EE] h-full shadow-2xl flex flex-col overflow-hidden border-l border-[#D4D4C4] transition-all duration-300">
+
             {/* Drawer Header */}
-            <div className="p-6 border-b border-[#E2E8F0] flex items-center justify-between bg-[#F8FAFC]">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#E7F3E8] text-[#2E7D32] flex items-center justify-center font-bold">
+            <div className="p-4 sm:p-5 border-b border-[#D4D4C4] flex items-center justify-between bg-[#EEEDDF] shrink-0 gap-3">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="w-10 h-10 rounded-2xl bg-[#EAF2ED] text-[#2F5241] flex items-center justify-center shrink-0 border border-[#2F5241]/15">
                   <FileText className="w-5 h-5" />
                 </div>
-                <div>
-                  <h2 className="text-lg font-extrabold text-[#1E293B]">
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-sm font-extrabold text-[#152A38] truncate">
                     {drawerBill?.facility?.name || "Utility Bill Document"}
                   </h2>
-                  <p className="text-xs font-semibold text-[#64748B]">
-                    {drawerBill?.billType || "Utility"} Invoice | {drawerBill?.billMonth || ""} {drawerBill?.billYear || ""}
+                  <p className="text-[11px] font-semibold text-[#7A8597] truncate mt-0.5">
+                    {drawerBill?.billType || "Utility"} Invoice - {drawerBill?.billMonth || ""} {drawerBill?.billYear || ""}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 shrink-0">
                 {drawerBill && (
-                  <span className={`px-3 py-1 rounded-full text-xs font-extrabold ${getStatusBadgeClass(drawerBill.status)}`}>
+                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase hidden sm:inline-block ${getStatusBadgeClass(drawerBill.status)}`}>
                     {drawerBill.status}
                   </span>
                 )}
                 <button
                   onClick={closeDrawer}
-                  className="p-2 text-[#94A3B8] hover:text-[#1E293B] hover:bg-white rounded-xl border border-[#E2E8F0] transition-colors cursor-pointer"
+                  className="p-1.5 text-[#94A3B8] hover:text-[#152A38] hover:bg-[#EEEDDF] rounded-xl border border-[#D4D4C4] transition-colors cursor-pointer"
+                  title="Close"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
             </div>
 
             {/* Drawer Navigation Tabs */}
-            <div className="flex items-center border-b border-[#E2E8F0] px-6 bg-white gap-2">
-              <button
-                onClick={() => setActiveTab("overview")}
-                className={`py-3 px-4 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
-                  activeTab === "overview"
-                    ? "border-[#2E7D32] text-[#2E7D32]"
-                    : "border-transparent text-[#64748B] hover:text-[#1E293B]"
-                }`}
-              >
-                Overview
-              </button>
-              <button
-                onClick={() => setActiveTab("utilities")}
-                className={`py-3 px-4 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
-                  activeTab === "utilities"
-                    ? "border-[#2E7D32] text-[#2E7D32]"
-                    : "border-transparent text-[#64748B] hover:text-[#1E293B]"
-                }`}
-              >
-                Extracted Utilities ({drawerBill?.utilities?.length || 0})
-              </button>
-              <button
-                onClick={() => setActiveTab("preview")}
-                className={`py-3 px-4 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
-                  activeTab === "preview"
-                    ? "border-[#2E7D32] text-[#2E7D32]"
-                    : "border-transparent text-[#64748B] hover:text-[#1E293B]"
-                }`}
-              >
-                File Preview
-              </button>
-              <button
-                onClick={() => setActiveTab("json")}
-                className={`py-3 px-4 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
-                  activeTab === "json"
-                    ? "border-[#2E7D32] text-[#2E7D32]"
-                    : "border-transparent text-[#64748B] hover:text-[#1E293B]"
-                }`}
-              >
-                Raw AI JSON
-              </button>
+            <div className="flex items-center border-b border-[#D4D4C4] px-4 sm:px-5 bg-[#EEEDDF]/60 gap-1 shrink-0 overflow-x-auto">
+              {["overview", "utilities", "preview", "json"].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`py-2.5 px-3 text-[11px] font-extrabold border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
+                    activeTab === tab
+                      ? "border-[#2F5241] text-[#2F5241]"
+                      : "border-transparent text-[#7A8597] hover:text-[#152A38]"
+                  }`}
+                >
+                  {tab === "overview" && "Overview"}
+                  {tab === "utilities" && `Utilities (${drawerBill?.utilities?.length || 0})`}
+                  {tab === "preview" && "File Preview"}
+                  {tab === "json" && "Raw AI JSON"}
+                </button>
+              ))}
             </div>
 
             {/* Drawer Content Body */}
-            <div className="p-6 flex-1 overflow-y-auto space-y-6">
+            <div className="p-4 sm:p-5 flex-1 overflow-y-auto space-y-5">
               {drawerLoading ? (
-                <div className="flex flex-col items-center justify-center py-20 text-[#64748B]">
-                  <RefreshCw className="w-8 h-8 animate-spin text-[#2E7D32] mb-3" />
-                  <p className="text-sm font-bold">Loading document analysis details...</p>
+                <div className="flex flex-col items-center justify-center py-20 text-[#7A8597]">
+                  <RefreshCw className="w-7 h-7 animate-spin text-[#2F5241] mb-3" />
+                  <p className="text-xs font-bold">Loading document analysis details...</p>
                 </div>
               ) : !drawerBill ? (
-                <div className="text-center py-12 text-[#64748B]">
-                  <p className="text-sm font-semibold">No bill data available.</p>
+                <div className="text-center py-12 text-[#7A8597]">
+                  <p className="text-xs font-semibold">No bill data available.</p>
                 </div>
               ) : (
                 <>
                   {activeTab === "overview" && (
-                    <div className="space-y-6">
-                      {/* Summary Cards */}
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                        <div className="p-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl text-center">
-                          <span className="text-[10px] font-bold text-[#64748B] uppercase block">TOTAL AMOUNT</span>
-                          <span className="text-base font-extrabold text-[#1E293B] mt-1 block">
-                            {drawerBill.totalAmount != null ? formatCurrency(drawerBill.totalAmount) : "—"}
+                    <div className="space-y-5">
+                      {/* Summary KPI Grid */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center">
+                        <div className="p-3 bg-[#EEEDDF] border border-[#DDDDD0] rounded-2xl flex flex-col justify-center">
+                          <span className="text-[9.5px] font-extrabold text-[#7A8597] uppercase tracking-wider block">TOTAL AMOUNT</span>
+                          <span className="text-xs sm:text-sm font-extrabold text-[#152A38] mt-0.5 block truncate">
+                            {drawerBill.totalAmount != null ? formatCurrency(drawerBill.totalAmount) : "-"}
                           </span>
                         </div>
-                        <div className="p-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl text-center">
-                          <span className="text-[10px] font-bold text-[#64748B] uppercase block">CARBON EMISSION</span>
-                          <span className="text-base font-extrabold text-[#EF4444] mt-1 block">
+                        <div className="p-3 bg-[#EEEDDF] border border-[#DDDDD0] rounded-2xl flex flex-col justify-center">
+                          <span className="text-[9.5px] font-extrabold text-[#7A8597] uppercase tracking-wider block">CARBON EMISSION</span>
+                          <span className="text-xs sm:text-sm font-extrabold text-[#EF4444] mt-0.5 block truncate">
                             {getBillCarbon(drawerBill).toFixed(2)} kg
                           </span>
                         </div>
-                        <div className="p-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl text-center">
-                          <span className="text-[10px] font-bold text-[#64748B] uppercase block">CONSUMER NAME</span>
-                          <span className="text-xs font-extrabold text-[#1E293B] mt-1 block truncate">
-                            {drawerBill.consumerName || "—"}
-                          </span>
-                        </div>
-                        <div className="p-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl text-center">
-                          <span className="text-[10px] font-bold text-[#64748B] uppercase block">METER NUMBER</span>
-                          <span className="text-xs font-extrabold text-[#1E293B] mt-1 block truncate">
-                            {drawerBill.meterNumber || "—"}
-                          </span>
-                        </div>
+                        {drawerBill.consumerName && (
+                          <div className="p-3 bg-[#EEEDDF] border border-[#DDDDD0] rounded-2xl flex flex-col justify-center">
+                            <span className="text-[9.5px] font-extrabold text-[#7A8597] uppercase tracking-wider block">CONSUMER NAME</span>
+                            <span className="text-xs font-extrabold text-[#152A38] mt-0.5 block truncate">{drawerBill.consumerName}</span>
+                          </div>
+                        )}
+                        {drawerBill.meterNumber && (
+                          <div className="p-3 bg-[#EEEDDF] border border-[#DDDDD0] rounded-2xl flex flex-col justify-center">
+                            <span className="text-[9.5px] font-extrabold text-[#7A8597] uppercase tracking-wider block">METER NUMBER</span>
+                            <span className="text-xs font-extrabold text-[#152A38] mt-0.5 block truncate">{drawerBill.meterNumber}</span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Key Metadata Table */}
-                      <div className="bg-white border border-[#E2E8F0] rounded-2xl p-5 space-y-4 shadow-xs">
-                        <h3 className="text-xs font-extrabold text-[#1E293B] uppercase tracking-wider">Extracted Metadata</h3>
-                        <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div className="bg-[#EEEDDF] border border-[#DDDDD0] rounded-2xl p-4 space-y-3">
+                        <h3 className="text-[11px] font-extrabold text-[#152A38] uppercase tracking-wider">Extracted Document Metadata</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                           <div>
-                            <span className="text-[#64748B] block font-medium">Facility:</span>
-                            <span className="font-bold text-[#1E293B]">{drawerBill.facility?.name}</span>
+                            <span className="text-[#7A8597] block font-semibold">Facility:</span>
+                            <span className="font-extrabold text-[#152A38] break-words">{drawerBill.facility?.name}</span>
                           </div>
                           <div>
-                            <span className="text-[#64748B] block font-medium">Bill Type:</span>
-                            <span className="font-bold text-[#1E293B]">{drawerBill.billType}</span>
+                            <span className="text-[#7A8597] block font-semibold">Detected Utility:</span>
+                            <span className="font-extrabold text-[#152A38]">{drawerBill.billType}</span>
                           </div>
                           <div>
-                            <span className="text-[#64748B] block font-medium">Billing Period:</span>
-                            <span className="font-bold text-[#1E293B]">{drawerBill.billMonth} {drawerBill.billYear}</span>
+                            <span className="text-[#7A8597] block font-semibold">Billing Period:</span>
+                            <span className="font-extrabold text-[#152A38]">{drawerBill.billMonth} {drawerBill.billYear}</span>
                           </div>
                           <div>
-                            <span className="text-[#64748B] block font-medium">Bill Date:</span>
-                            <span className="font-bold text-[#1E293B]">{formatDate(drawerBill.billDate || drawerBill.createdAt)}</span>
+                            <span className="text-[#7A8597] block font-semibold">Bill Date:</span>
+                            <span className="font-extrabold text-[#152A38]">{formatDate(drawerBill.billDate || drawerBill.createdAt)}</span>
                           </div>
+                          {/* Dynamic Extra Metadata extracted by AI */}
+                          {drawerBill.aiExtractedData &&
+                            Object.entries(drawerBill.aiExtractedData).map(([key, val]) => {
+                              if (["billDate", "consumerName", "meterNumber", "billMonth", "billYear", "billType", "totalAmount"].includes(key)) {
+                                return null;
+                              }
+                              if (val === null || val === undefined || typeof val === "object") return null;
+                              return (
+                                <div key={key}>
+                                  <span className="text-[#7A8597] block font-semibold">{formatKeyToLabel(key)}:</span>
+                                  <span className="font-extrabold text-[#152A38]">{String(val)}</span>
+                                </div>
+                              );
+                            })}
                         </div>
                       </div>
 
                       {/* AI Ingestion Summary Banner */}
-                      <div className="bg-[#E7F3E8] border border-[#2E7D32]/20 rounded-2xl p-5 space-y-2">
-                        <div className="flex items-center gap-2 text-[#2E7D32]">
-                          <Sparkles className="w-4 h-4 font-bold" />
-                          <span className="text-xs font-extrabold uppercase tracking-wider">AI Ingestion Summary</span>
+                      <div className="bg-[#EAF2ED] border border-[#2F5241]/20 rounded-2xl p-4 space-y-1.5">
+                        <div className="flex items-center gap-2 text-[#2F5241]">
+                          <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                          <span className="text-[11px] font-extrabold uppercase tracking-wider">AI Ingestion Summary</span>
                         </div>
-                        <p className="text-xs font-medium text-[#1E293B] leading-relaxed">
-                          Automated OCR document parsing and energy accounting verified this invoice. Multi-field data extracted with high precision.
+                        <p className="text-xs font-semibold text-[#152A38] leading-relaxed">
+                          Automated multi-utility OCR parsing and energy accounting verified this invoice. Data extracted and normalized cleanly.
                         </p>
                       </div>
                     </div>
@@ -954,29 +1220,33 @@ const Bills = () => {
                   {activeTab === "utilities" && (
                     <div className="space-y-4">
                       {(!drawerBill.utilities || drawerBill.utilities.length === 0) ? (
-                        <div className="p-8 text-center bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl text-xs font-semibold text-[#64748B]">
+                        <div className="p-8 text-center bg-[#EEEDDF] border border-[#DDDDD0] rounded-2xl text-xs font-bold text-[#7A8597]">
                           No specific utility breakdown items recorded.
                         </div>
                       ) : (
-                        <div className="bg-white border border-[#E2E8F0] rounded-2xl overflow-hidden shadow-xs">
+                        <div className="bg-[#EEEDDF] border border-[#DDDDD0] rounded-2xl overflow-hidden">
                           <table className="w-full text-left text-xs">
-                            <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0] font-bold text-[#64748B]">
+                            <thead className="bg-[#E4E3D6] border-b border-[#D4D4C4] font-extrabold text-[#7A8597]">
                               <tr>
                                 <th className="p-3">Utility Type</th>
                                 <th className="p-3">Usage</th>
                                 <th className="p-3">Unit</th>
                                 <th className="p-3">Amount</th>
-                                <th className="p-3">Carbon (kg)</th>
+                                <th className="p-3 text-[#EF4444]">Carbon (kg)</th>
                               </tr>
                             </thead>
-                            <tbody className="divide-y divide-[#E2E8F0] font-semibold text-[#1E293B]">
+                            <tbody className="divide-y divide-[#D4D4C4] font-semibold text-[#152A38]">
                               {drawerBill.utilities.map((u, idx) => (
-                                <tr key={u.id || idx}>
-                                  <td className="p-3 font-bold">{u.utilityType}</td>
+                                <tr key={u.id || idx} className="hover:bg-[#E4E3D6]/50 transition-colors">
+                                  <td className="p-3 font-bold">
+                                    <span className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold ${getUtilityChipClass(u.utilityType)}`}>
+                                      {u.utilityType}
+                                    </span>
+                                  </td>
                                   <td className="p-3">{u.usage}</td>
                                   <td className="p-3">{u.unit}</td>
-                                  <td className="p-3">{formatCurrency(u.amount)}</td>
-                                  <td className="p-3 text-[#EF4444] font-bold">{u.carbonEmission?.toFixed(2)}</td>
+                                  <td className="p-3 font-extrabold">{formatCurrency(u.amount)}</td>
+                                  <td className="p-3 text-[#EF4444] font-extrabold">{u.carbonEmission?.toFixed(2)}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -989,37 +1259,37 @@ const Bills = () => {
                   {activeTab === "preview" && (
                     <div className="space-y-4">
                       {previewUrl ? (
-                        <div className="border border-[#E2E8F0] rounded-2xl p-4 bg-[#F8FAFC] flex flex-col items-center justify-center space-y-4">
+                        <div className="border border-[#D4D4C4] rounded-2xl p-4 bg-[#EEEDDF] flex flex-col items-center justify-center space-y-4">
                           {previewUrl.toLowerCase().includes(".pdf") ? (
-                            <iframe src={previewUrl} title="Document Preview" className="w-full h-[480px] rounded-xl border border-[#E2E8F0]" />
+                            <iframe src={previewUrl} title="Document Preview" className="w-full h-[480px] rounded-xl border border-[#D4D4C4]" />
                           ) : (
-                            <img src={previewUrl} alt="Utility Bill Document Preview" className="max-h-[450px] object-contain rounded-xl border border-[#E2E8F0] shadow-xs" />
+                            <img src={previewUrl} alt="Utility Bill Document Preview" className="max-h-[450px] object-contain rounded-xl border border-[#D4D4C4] shadow-xs" />
                           )}
                           <a
                             href={previewUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="px-4 py-2 bg-[#2E7D32] text-white font-extrabold text-xs rounded-xl shadow-xs hover:bg-[#256829] flex items-center gap-2 cursor-pointer"
+                            className="px-4 py-2 bg-[#2F5241] text-[#E4E5DB] font-extrabold text-xs rounded-xl shadow-xs hover:bg-[#234035] flex items-center gap-2 cursor-pointer transition-all"
                           >
                             <Download className="w-4 h-4" />
                             <span>Download Document File</span>
                           </a>
                         </div>
                       ) : drawerBill.billFileUrl ? (
-                        <div className="p-8 text-center bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl space-y-3">
-                          <p className="text-xs font-semibold text-[#64748B]">Document file available at stored URL.</p>
+                        <div className="p-8 text-center bg-[#EEEDDF] border border-[#DDDDD0] rounded-2xl space-y-3">
+                          <p className="text-xs font-semibold text-[#7A8597]">Document file available at stored URL.</p>
                           <a
                             href={drawerBill.billFileUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="px-4 py-2 bg-[#2E7D32] text-white font-extrabold text-xs rounded-xl shadow-xs hover:bg-[#256829] inline-flex items-center gap-2 cursor-pointer"
+                            className="px-4 py-2 bg-[#2F5241] text-[#E4E5DB] font-extrabold text-xs rounded-xl shadow-xs hover:bg-[#234035] inline-flex items-center gap-2 cursor-pointer transition-all"
                           >
                             <Eye className="w-4 h-4" />
                             <span>Open Stored File Link</span>
                           </a>
                         </div>
                       ) : (
-                        <div className="p-8 text-center bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl text-xs font-semibold text-[#64748B]">
+                        <div className="p-8 text-center bg-[#EEEDDF] border border-[#DDDDD0] rounded-2xl text-xs font-bold text-[#7A8597]">
                           No document preview file uploaded for this bill record.
                         </div>
                       )}
@@ -1029,10 +1299,10 @@ const Bills = () => {
                   {activeTab === "json" && (
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-[#64748B]">Extracted Key-Value Payload</span>
-                        <span className="text-[10px] font-bold text-[#2E7D32] uppercase">JSON Schema</span>
+                        <span className="text-xs font-bold text-[#7A8597]">Full Extracted AI Payload (Raw Database Record)</span>
+                        <span className="text-[10px] font-extrabold text-[#2F5241] uppercase font-mono bg-[#EAF2ED] px-2 py-0.5 rounded-lg border border-[#2F5241]/15">aiExtractedData JSON</span>
                       </div>
-                      <pre className="bg-[#0F172A] text-emerald-400 p-5 rounded-2xl text-xs overflow-auto max-h-[480px] font-mono shadow-inner border border-[#1E293B]">
+                      <pre className="bg-[#0F172A] text-emerald-400 p-5 rounded-2xl text-[11px] overflow-auto max-h-[480px] font-mono shadow-inner border border-[#1E293B]/50 leading-relaxed">
                         {JSON.stringify(drawerBill.aiExtractedData || drawerBill, null, 2)}
                       </pre>
                     </div>
@@ -1042,19 +1312,41 @@ const Bills = () => {
             </div>
 
             {/* Drawer Footer */}
-            <div className="p-4 border-t border-[#E2E8F0] bg-[#F8FAFC] flex justify-end">
+            <div className="p-4 border-t border-[#D4D4C4] bg-[#EEEDDF] flex items-center justify-between gap-3 shrink-0">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    closeDrawer();
+                    openEditModal(drawerBill);
+                  }}
+                  className="px-3.5 py-2 bg-[#F7F6EE] border border-[#D4D4C4] text-[#152A38] font-extrabold text-xs rounded-xl hover:bg-[#EEEDDF] cursor-pointer flex items-center gap-1.5 transition-all active:scale-95"
+                >
+                  <Edit3 className="w-3.5 h-3.5 text-[#7A8597]" />
+                  <span>Edit Metadata</span>
+                </button>
+                <button
+                  onClick={() => handleDeleteBill(drawerBill.id)}
+                  className="px-3.5 py-2 bg-[#F7F6EE] border border-red-200 text-red-500 font-extrabold text-xs rounded-xl hover:bg-red-50 cursor-pointer flex items-center gap-1.5 transition-all active:scale-95"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Delete</span>
+                </button>
+              </div>
               <button
                 onClick={closeDrawer}
-                className="px-5 py-2.5 bg-white border border-[#E2E8F0] text-[#1E293B] font-bold text-xs rounded-xl hover:bg-white cursor-pointer"
+                className="px-5 py-2 bg-[#2F5241] text-[#E4E5DB] font-extrabold text-xs rounded-xl hover:bg-[#234035] cursor-pointer transition-all active:scale-95 shadow-xs"
               >
-                Close Drawer
+                Close Workspace
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
 };
 
+
 export default Bills;
+

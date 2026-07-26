@@ -114,7 +114,20 @@ export const getBill = async (req, res) => {
 
 export const editBill = async (req, res) => {
   try {
-    const bill = await updateBill(req.params.id, req.user.companyId, req.body);
+    let updateData = { ...req.body };
+
+    if (req.file) {
+      const uploadResult = await uploadFileToS3(req.file);
+      updateData.billFileUrl = uploadResult.url;
+      updateData.billFileKey = uploadResult.key;
+      updateData.status = "PENDING";
+    }
+
+    if (updateData.billYear) {
+      updateData.billYear = parseInt(updateData.billYear, 10);
+    }
+
+    const bill = await updateBill(req.params.id, req.user.companyId, updateData);
 
     return res.status(200).json({
       success: true,
@@ -169,13 +182,14 @@ export const processBill = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Bill fetched successfully",
+      message: "Utility bill AI processing completed successfully",
       data: bill,
     });
   } catch (error) {
-    return res.status(404).json({
+    const statusCode = error.message?.includes("not found") ? 404 : 500;
+    return res.status(statusCode).json({
       success: false,
-      message: error.message,
+      message: error.message || "Failed to process utility bill document.",
     });
   }
 };

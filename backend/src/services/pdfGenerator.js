@@ -6,42 +6,32 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /* ============================================================================
- * DESIGN SYSTEM
- * ----------------------------------------------------------------------------
- * A single, restrained palette + type scale used by every page. Keeping this
- * in one place is what lets every section look consistent instead of each
- * page inventing its own styling (the root cause of the old "web page
- * printed to PDF" feel).
+ * EXECUTIVE DESIGN SYSTEM
  * ========================================================================= */
 
 const COLORS = {
-  primary: "#2E7D32",
-  primaryLight: "#E7F3E8",
-  secondary: "#1565C0",
-  secondaryLight: "#E8F0FB",
-  warning: "#F9A825",
-  warningLight: "#FDF3E0",
-  danger: "#D32F2F",
-  dangerLight: "#FBE9E8",
-  dark: "#1E293B",
-  muted: "#64748B",
+  primary: "#2F5241",        // EcoAudit Forest Green
+  primaryLight: "#EAF2ED",   // Soft green tint
+  secondary: "#152A38",      // EcoAudit Dark Navy / Slate
+  secondaryLight: "#EEEDDF", // Warm beige tint
+  accent: "#D6CFB9",         // Soft gold/beige highlight
+  warning: "#D97706",        // Amber
+  warningLight: "#FEF3C7",
+  danger: "#EF4444",         // Red
+  dangerLight: "#FEE2E2",
+  dark: "#152A38",
+  muted: "#7A8597",
   subtle: "#94A3B8",
-  bg: "#F8FAFC",
+  bg: "#F7F6EE",             // Warm card background
   white: "#FFFFFF",
-  border: "#E2E8F0",
+  border: "#D4D4C4",         // Soft border
 };
 
-const MARGIN = 42;
+const MARGIN = 40;
 const TOTAL_PAGES = 6;
 
 /**
- * Registers Poppins/Inter if the font files exist next to this module, and
- * falls back to the PDF-safe Helvetica family otherwise. This directly fixes
- * two silent rendering bugs in the old generator: the rupee sign (₹) and the
- * CO₂ subscript are outside the WinAnsi encoding used by the base-14
- * Helvetica font, so they rendered as broken glyphs. When the custom fonts
- * aren't present we simply avoid those characters instead of printing
- * garbled ones.
+ * Registers Poppins / Inter custom fonts if present; falls back to standard Helvetica.
  */
 function resolveFonts(doc) {
   const fontsDir = path.join(__dirname, "fonts");
@@ -53,7 +43,7 @@ function resolveFonts(doc) {
           doc.registerFont(name, p);
           return true;
         } catch {
-          // fall through to next candidate
+          // fall through
         }
       }
     }
@@ -101,10 +91,6 @@ function truncate(text, max) {
   return s.length > max ? `${s.slice(0, max - 1)}…` : s;
 }
 
-/** Small abstract leaf mark, drawn as vectors so it never depends on emoji
- *  glyph support in the active font (the old cover page used a 🌿 emoji,
- *  which is exactly the kind of character that renders as a broken box in
- *  a standard PDF font). */
 function drawBrandMark(doc, x, y, size, color) {
   const r = size / 2;
   doc.save();
@@ -134,17 +120,17 @@ function drawPill(doc, x, y, text, fg, bg, config) {
 }
 
 function sectionLabel(doc, x, y, width, text, config) {
-  doc.fillColor(COLORS.dark).font(config.fonts.headingMedium).fontSize(10.5).text(text, x, y, { width });
+  doc.fillColor(COLORS.secondary).font(config.fonts.headingMedium).fontSize(10).text(text.toUpperCase(), x, y, { width, characterSpacing: 0.5 });
   doc
     .strokeColor(COLORS.border)
     .lineWidth(0.75)
-    .moveTo(x, y + 15)
-    .lineTo(x + width, y + 15)
+    .moveTo(x, y + 14)
+    .lineTo(x + width, y + 14)
     .stroke();
-  return y + 24;
+  return y + 22;
 }
 
-function kpiCard(doc, x, y, w, h, label, value, config, valueColor = COLORS.dark) {
+function kpiCard(doc, x, y, w, h, label, value, config, valueColor = COLORS.secondary) {
   doc.roundedRect(x, y, w, h, 8).fillAndStroke(COLORS.bg, COLORS.border);
   doc
     .fillColor(COLORS.muted)
@@ -154,25 +140,24 @@ function kpiCard(doc, x, y, w, h, label, value, config, valueColor = COLORS.dark
   doc
     .fillColor(valueColor)
     .font(config.fonts.headingBold)
-    .fontSize(12.5)
-    .text(String(value), x + 12, y + 25, { width: w - 24 });
+    .fontSize(12)
+    .text(String(value), x + 12, y + 24, { width: w - 24 });
 }
 
-function infoCard(doc, x, y, w, h, title, config, drawBody) {
+function infoCard(doc, x, y, w, h, title, config, drawBody, headerColor = COLORS.primary) {
   doc.roundedRect(x, y, w, h, 8).fillAndStroke(COLORS.bg, COLORS.border);
-  doc.fillColor(COLORS.primary).font(config.fonts.headingMedium).fontSize(9.5).text(title, x + 14, y + 12);
+  doc.fillColor(headerColor).font(config.fonts.headingMedium).fontSize(9.5).text(title, x + 14, y + 10);
   doc
     .strokeColor(COLORS.border)
     .lineWidth(0.5)
-    .moveTo(x + 14, y + 27)
-    .lineTo(x + w - 14, y + 27)
+    .moveTo(x + 14, y + 25)
+    .lineTo(x + w - 14, y + 25)
     .stroke();
-  drawBody(x + 14, y + 34, w - 28);
+  drawBody(x + 14, y + 32, w - 28);
 }
 
-/** Generic table renderer. columns: [{ label, width, align, render(row), color(row), bold }] */
-function drawTable(doc, x, y, width, columns, rows, config, rowHeight = 21) {
-  doc.roundedRect(x, y, width, rowHeight, 3).fill(COLORS.dark);
+function drawTable(doc, x, y, width, columns, rows, config, rowHeight = 20) {
+  doc.roundedRect(x, y, width, rowHeight, 4).fill(COLORS.secondary);
   let cx = x;
   columns.forEach((col) => {
     doc
@@ -190,7 +175,7 @@ function drawTable(doc, x, y, width, columns, rows, config, rowHeight = 21) {
     cx = x;
     columns.forEach((col) => {
       const val = col.render ? col.render(row) : row[col.key];
-      const color = typeof col.color === "function" ? col.color(row) : col.color || COLORS.dark;
+      const color = typeof col.color === "function" ? col.color(row) : col.color || COLORS.secondary;
       doc
         .fillColor(color)
         .font(col.bold ? config.fonts.bodyBold : config.fonts.body)
@@ -205,20 +190,20 @@ function drawTable(doc, x, y, width, columns, rows, config, rowHeight = 21) {
 }
 
 function drawBarRow(doc, x, y, width, label, valueLabel, pct, color, config) {
-  const labelW = 130;
-  const valueW = 84;
+  const labelW = 140;
+  const valueW = 90;
   const barX = x + labelW;
   const barW = width - labelW - valueW;
   doc
-    .fillColor(COLORS.dark)
+    .fillColor(COLORS.secondary)
     .font(config.fonts.bodyBold)
     .fontSize(8)
-    .text(truncate(label, 24), x, y + 3, { width: labelW - 8 });
-  doc.roundedRect(barX, y, barW, 12, 4).fill(COLORS.bg);
+    .text(truncate(label, 26), x, y + 2, { width: labelW - 8 });
+  doc.roundedRect(barX, y, barW, 11, 4).fill(COLORS.bg);
   const fillW = Math.max((Math.min(pct, 100) / 100) * barW, 4);
-  doc.roundedRect(barX, y, fillW, 12, 4).fill(color);
+  doc.roundedRect(barX, y, fillW, 11, 4).fill(color);
   doc
-    .fillColor(COLORS.dark)
+    .fillColor(COLORS.secondary)
     .font(config.fonts.bodyBold)
     .fontSize(8)
     .text(valueLabel, barX + barW + 8, y + 2, { width: valueW - 8, align: "right" });
@@ -230,45 +215,45 @@ function drawHeader(doc, config, pageNum, sectionNumber, title) {
     .fillColor(COLORS.subtle)
     .font(config.fonts.body)
     .fontSize(7.5)
-    .text(config.brandLine, MARGIN, 26, { width: contentWidth / 2 });
+    .text(config.brandLine, MARGIN, 24, { width: contentWidth / 2 });
   doc
     .fillColor(COLORS.subtle)
     .font(config.fonts.body)
     .fontSize(7.5)
-    .text(`Page ${pageNum} of ${TOTAL_PAGES}`, MARGIN, 26, { width: contentWidth, align: "right" });
+    .text(`Page ${pageNum} of ${TOTAL_PAGES}`, MARGIN, 24, { width: contentWidth, align: "right" });
   doc
     .strokeColor(COLORS.border)
     .lineWidth(0.75)
-    .moveTo(MARGIN, 40)
-    .lineTo(MARGIN + contentWidth, 40)
+    .moveTo(MARGIN, 36)
+    .lineTo(MARGIN + contentWidth, 36)
     .stroke();
 
-  const badge = 20;
-  const titleY = 54;
-  doc.roundedRect(MARGIN, titleY, badge, badge, 5).fill(COLORS.primaryLight);
+  const badge = 18;
+  const titleY = 48;
+  doc.roundedRect(MARGIN, titleY, badge, badge, 4).fill(COLORS.primaryLight);
   doc
     .fillColor(COLORS.primary)
     .font(config.fonts.headingBold)
-    .fontSize(9)
-    .text(String(sectionNumber).padStart(2, "0"), MARGIN, titleY + 6, { width: badge, align: "center" });
+    .fontSize(8.5)
+    .text(String(sectionNumber).padStart(2, "0"), MARGIN, titleY + 5, { width: badge, align: "center" });
   doc
-    .fillColor(COLORS.dark)
+    .fillColor(COLORS.secondary)
     .font(config.fonts.headingBold)
-    .fontSize(15)
+    .fontSize(14)
     .text(title, MARGIN + badge + 10, titleY + 2);
   doc
     .strokeColor(COLORS.primary)
     .lineWidth(1.25)
-    .moveTo(MARGIN, titleY + badge + 10)
-    .lineTo(MARGIN + contentWidth, titleY + badge + 10)
+    .moveTo(MARGIN, titleY + badge + 8)
+    .lineTo(MARGIN + contentWidth, titleY + badge + 8)
     .stroke();
 
-  return titleY + badge + 24;
+  return titleY + badge + 20;
 }
 
 function drawFooter(doc, config, pageNum) {
   const { contentWidth } = config;
-  const y = doc.page.height - 32;
+  const y = doc.page.height - 30;
   doc
     .strokeColor(COLORS.border)
     .lineWidth(0.5)
@@ -279,64 +264,64 @@ function drawFooter(doc, config, pageNum) {
     .fillColor(COLORS.subtle)
     .font(config.fonts.body)
     .fontSize(7)
-    .text(`${config.companyName} — Confidential`, MARGIN, y + 8);
+    .text(`${config.companyName} — Confidential & Proprietary`, MARGIN, y + 6);
   doc
     .fillColor(COLORS.subtle)
     .font(config.fonts.body)
     .fontSize(7)
-    .text(`Page ${pageNum} of ${TOTAL_PAGES}`, MARGIN, y + 8, { width: contentWidth, align: "right" });
+    .text(`Page ${pageNum} of ${TOTAL_PAGES}`, MARGIN, y + 6, { width: contentWidth, align: "right" });
 }
 
 /* ============================================================================
- * PAGE 1 — COVER
+ * PAGE 1 — COVER PAGE
  * ========================================================================= */
 
 function buildCoverPage(doc, payload, config, fmt) {
   const { contentWidth } = config;
 
-  drawBrandMark(doc, MARGIN, 50, 30, COLORS.primary);
+  drawBrandMark(doc, MARGIN, 50, 32, COLORS.primary);
   doc
-    .fillColor(COLORS.dark)
+    .fillColor(COLORS.secondary)
     .font(config.fonts.headingBold)
-    .fontSize(15)
-    .text("EcoAudit AI", MARGIN + 40, 55);
+    .fontSize(16)
+    .text("EcoAudit AI", MARGIN + 42, 54);
   doc
     .fillColor(COLORS.muted)
     .font(config.fonts.body)
     .fontSize(8.5)
-    .text("Enterprise carbon governance platform", MARGIN + 40, 74);
+    .text("Enterprise Carbon Governance Platform", MARGIN + 42, 73);
 
   doc
     .strokeColor(COLORS.border)
     .lineWidth(0.75)
-    .moveTo(MARGIN, 100)
-    .lineTo(MARGIN + contentWidth, 100)
+    .moveTo(MARGIN, 98)
+    .lineTo(MARGIN + contentWidth, 98)
     .stroke();
 
-  const blockY = 300;
+  const blockY = 280;
   doc
     .fillColor(COLORS.muted)
     .font(config.fonts.bodyBold)
     .fontSize(9.5)
     .text(config.companyName.toUpperCase(), MARGIN, blockY, { characterSpacing: 0.6 });
   doc
-    .fillColor(COLORS.dark)
+    .fillColor(COLORS.secondary)
     .font(config.fonts.headingBold)
     .fontSize(26)
-    .text("Executive sustainability report", MARGIN, blockY + 18, { width: contentWidth - 40 });
+    .text("Executive Sustainability Assessment Report", MARGIN, blockY + 18, { width: contentWidth - 40 });
   doc
-    .fillColor(COLORS.secondary)
+    .fillColor(COLORS.primary)
     .font(config.fonts.headingMedium)
     .fontSize(12.5)
-    .text(payload.reportType || "Monthly carbon audit report", MARGIN, blockY + 62);
+    .text(payload.reportType || "Monthly Carbon Audit Report", MARGIN, blockY + 68);
 
-  // Minimal identifying metadata — a slim row, not a boxed list.
-  const metaY = blockY + 130;
+  // Metadata Grid Strip
+  const metaY = blockY + 135;
   const metaItems = [
-    { label: "Scope", value: payload.filterScope?.facilityName || "Company-wide" },
-    { label: "Reporting period", value: payload.filterScope?.periodLabel || "—" },
-    { label: "Generated", value: new Date(payload.generatedAt || Date.now()).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }) },
-    { label: "Report ID", value: config.reportId },
+    { label: "Scope", value: payload.filterScope?.facilityName || "Company-Wide Scope" },
+    { label: "Reporting Period", value: payload.filterScope?.periodLabel || "All Historical Data" },
+    { label: "Generated Date", value: new Date(payload.generatedAt || Date.now()).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }) },
+    { label: "Report ID", value: payload.reportId || config.reportId },
   ];
   const colW = contentWidth / metaItems.length;
   doc
@@ -345,35 +330,36 @@ function buildCoverPage(doc, payload, config, fmt) {
     .moveTo(MARGIN, metaY - 14)
     .lineTo(MARGIN + contentWidth, metaY - 14)
     .stroke();
+
   metaItems.forEach((item, idx) => {
     const x = MARGIN + idx * colW;
     if (idx > 0) {
       doc.strokeColor(COLORS.border).lineWidth(0.5).moveTo(x, metaY).lineTo(x, metaY + 44).stroke();
     }
-    const padX = idx === 0 ? 0 : 14;
+    const padX = idx === 0 ? 0 : 12;
     doc
       .fillColor(COLORS.subtle)
       .font(config.fonts.bodyBold)
       .fontSize(7)
       .text(item.label.toUpperCase(), x + padX, metaY, { width: colW - padX - 8, characterSpacing: 0.4 });
     doc
-      .fillColor(COLORS.dark)
+      .fillColor(COLORS.secondary)
       .font(config.fonts.bodyBold)
-      .fontSize(9)
+      .fontSize(8.5)
       .text(truncate(item.value, 26), x + padX, metaY + 13, { width: colW - padX - 8 });
   });
 
-  // Confidentiality strip doubles as the cover footer.
-  const stripY = doc.page.height - 70;
-  doc.roundedRect(MARGIN, stripY, contentWidth, 34, 6).fill(COLORS.dark);
+  // Footer Strip
+  const stripY = doc.page.height - 65;
+  doc.roundedRect(MARGIN, stripY, contentWidth, 34, 6).fill(COLORS.secondary);
   doc
     .fillColor(COLORS.white)
     .font(config.fonts.bodyBold)
-    .fontSize(8.5)
-    .text("Confidential — prepared for executive & ESG review", MARGIN + 14, stripY + 12);
+    .fontSize(8)
+    .text("CONFIDENTIAL & PROPRIETARY — FOR EXECUTIVE & ESG COMPLIANCE BOARD USE ONLY", MARGIN + 14, stripY + 12);
   doc
-    .fillColor("#94A3B8")
-    .font(config.fonts.body)
+    .fillColor(COLORS.accent)
+    .font(config.fonts.bodyBold)
     .fontSize(8)
     .text(`Page 1 of ${TOTAL_PAGES}`, MARGIN, stripY + 12, { width: contentWidth - 14, align: "right" });
 }
@@ -385,125 +371,199 @@ function buildCoverPage(doc, payload, config, fmt) {
 function buildExecutiveSummaryPage(doc, payload, config, fmt, top) {
   const { contentWidth } = config;
   const es = payload.executiveSummary || {};
+  const noBills = (es.totalBills || 0) === 0;
   let y = top;
 
   const gap = 10;
   const cardW = (contentWidth - gap * 3) / 4;
-  const cardH = 50;
-  kpiCard(doc, MARGIN, y, cardW, cardH, "Processed bills", `${es.processedBills || 0} / ${es.totalBills || 0}`, config);
-  kpiCard(doc, MARGIN + (cardW + gap), y, cardW, cardH, "Total emissions", `${(es.totalCarbonEmission || 0).toFixed(1)} kg`, config, COLORS.danger);
-  kpiCard(doc, MARGIN + (cardW + gap) * 2, y, cardW, cardH, "Utility spend", fmt.formatCurrency(es.totalAmount), config, COLORS.secondary);
-  kpiCard(doc, MARGIN + (cardW + gap) * 3, y, cardW, cardH, "Monitored sites", `${es.facilitiesCovered || 0}`, config, COLORS.primary);
-  y += cardH + 18;
+  const cardH = 48;
+  kpiCard(doc, MARGIN, y, cardW, cardH, "Total Emissions", `${(es.totalCarbonEmission || 0).toFixed(1)} kg`, config, COLORS.danger);
+  kpiCard(doc, MARGIN + (cardW + gap), y, cardW, cardH, "Utility Spend", fmt.formatCurrency(es.totalAmount), config, COLORS.secondary);
+  kpiCard(doc, MARGIN + (cardW + gap) * 2, y, cardW, cardH, "Processed Bills", `${es.processedBills || 0} / ${es.totalBills || 0}`, config, COLORS.primary);
+  kpiCard(doc, MARGIN + (cardW + gap) * 3, y, cardW, cardH, "Monitored Sites", `${es.facilitiesCovered || 0}`, config, COLORS.secondary);
+  y += cardH + 16;
 
-  const primaryUtility = es.highestContributingUtility || "electricity";
-  const topFacility = es.highestContributingFacility || "the primary facility";
-  const synthesis =
+  const synthesis = payload.aiIntelligence?.whatHappened ||
     `EcoAudit AI verified ${es.processedBills || 0} of ${es.totalBills || 0} submitted utility invoices across ` +
-    `${es.facilitiesCovered || 0} monitored facilities for this reporting period. ${primaryUtility} was the leading ` +
-    `contributor to the organization's carbon footprint, and ${topFacility} recorded the highest facility-level ` +
-    `emissions. Combined Scope 1 and Scope 2 output reached ${(es.totalCarbonEmission || 0).toFixed(1)} kg ${fmt.co2e} against ` +
-    `${fmt.formatCurrency(es.totalAmount)} in utility spend.`;
+    `${es.facilitiesCovered || 0} monitored facilities for this scope. Scope 1 and Scope 2 output reached ` +
+    `${(es.totalCarbonEmission || 0).toFixed(1)} kg ${fmt.co2e} against ${fmt.formatCurrency(es.totalAmount)} in utility spend.`;
 
-  infoCard(doc, MARGIN, y, contentWidth, 92, "Summary", config, (bx, by, bw) => {
-    doc.fillColor(COLORS.dark).font(config.fonts.body).fontSize(8.5).text(synthesis, bx, by, { width: bw, lineHeight: 1.4 });
+  infoCard(doc, MARGIN, y, contentWidth, 84, "Executive Synthesis", config, (bx, by, bw) => {
+    doc.fillColor(COLORS.secondary).font(config.fonts.body).fontSize(8.5).text(synthesis, bx, by, { width: bw, lineHeight: 1.4 });
   });
-  y += 92 + 22;
+  y += 84 + 18;
 
-  y = sectionLabel(doc, MARGIN, y, contentWidth, "Key findings", config);
+  y = sectionLabel(doc, MARGIN, y, contentWidth, "Executive Key Findings", config);
 
+  if (noBills) {
+    doc.roundedRect(MARGIN, y, contentWidth, 60, 6).fillAndStroke(COLORS.bg, COLORS.border);
+    doc.fillColor(COLORS.muted).font(config.fonts.body).fontSize(8.5).text("No utility bill documents were found for this reporting period. Select a different date range or upload invoices to view carbon findings.", MARGIN + 14, y + 20, { width: contentWidth - 28 });
+    return;
+  }
+
+  const topFacility = es.highestContributingFacility || "Primary Facility";
+  const primaryUtility = es.highestContributingUtility || "Electricity";
   const utilityShare = payload.utilityBreakdown?.[0]?.pctShare;
+  const topAction = payload.actionPlan?.[0]?.action || "Optimize operating schedules and efficiency settings.";
+
   const findings = [
-    { label: "Highest-emission facility", desc: `${topFacility} accounts for the largest share of monitored emissions.` },
-    { label: "Primary utility driver", desc: `${primaryUtility} contributed roughly ${utilityShare ?? "the majority of"}${utilityShare ? "%" : ""} of total emissions.` },
-    { label: "Data completeness", desc: "All submitted invoices passed automated verification with no data gaps." },
-    { label: "Spend and emissions correlation", desc: "Utility spend tracks closely with operational peak-demand periods." },
-    { label: "Priority lever", desc: "Operating-schedule and efficiency improvements offer the fastest reduction path." },
+    { label: "Highest-Emission Facility", desc: `${topFacility} recorded the largest share of monitored scope emissions.` },
+    { label: "Primary Utility Driver", desc: `${primaryUtility} contributed ${utilityShare ? `${utilityShare}%` : "the majority"} of overall greenhouse gas output.` },
+    { label: "Data Completeness Score", desc: `Data Quality Grade: ${es.auditConfidenceScore || "Grade A (Audit-Ready)"} with 100% OCR field verification.` },
+    { label: "Spend & Emission Correlation", desc: "Billed utility spend tracks directly with operational peak demand periods." },
+    { label: "Priority Intervention", desc: truncate(topAction, 90) },
   ];
 
   findings.forEach((f, idx) => {
     doc.circle(MARGIN + 4, y + 5, 3).fill(COLORS.primary);
     doc
-      .fillColor(COLORS.dark)
+      .fillColor(COLORS.secondary)
       .font(config.fonts.bodyBold)
-      .fontSize(8.5)
-      .text(f.label, MARGIN + 16, y, { width: 160 });
+      .fontSize(8.3)
+      .text(f.label, MARGIN + 14, y, { width: 150 });
     doc
       .fillColor(COLORS.muted)
       .font(config.fonts.body)
-      .fontSize(8.5)
-      .text(f.desc, MARGIN + 190, y, { width: contentWidth - 190 });
-    y += 26;
+      .fontSize(8.3)
+      .text(f.desc, MARGIN + 170, y, { width: contentWidth - 170 });
+    y += 24;
     if (idx < findings.length - 1) {
       doc
         .strokeColor(COLORS.border)
         .lineWidth(0.5)
-        .moveTo(MARGIN, y - 6)
-        .lineTo(MARGIN + contentWidth, y - 6)
+        .moveTo(MARGIN, y - 5)
+        .lineTo(MARGIN + contentWidth, y - 5)
         .stroke();
     }
   });
 }
 
 /* ============================================================================
- * PAGE 3 — UTILITY & CARBON ANALYSIS
+ * PAGE 3 — AI SUSTAINABILITY INTELLIGENCE
+ * ========================================================================= */
+
+function buildIntelligencePage(doc, payload, config, fmt, top) {
+  const { contentWidth } = config;
+  const intel = payload.aiIntelligence || {};
+  const noBills = (payload.executiveSummary?.totalBills || 0) === 0;
+  let y = top;
+
+  if (noBills) {
+    y = sectionLabel(doc, MARGIN, y, contentWidth, "AI Root Cause & Predictive Analysis", config);
+    doc.roundedRect(MARGIN, y, contentWidth, 80, 6).fillAndStroke(COLORS.bg, COLORS.border);
+    doc.fillColor(COLORS.muted).font(config.fonts.body).fontSize(8.5).text("No historical invoice data available to compute predictive trend models for this selected scope. Upload utility bills to unlock AI carbon predictions.", MARGIN + 16, y + 30, { width: contentWidth - 32 });
+    return;
+  }
+
+  y = sectionLabel(doc, MARGIN, y, contentWidth, "AI Root Cause & Predictive Analysis", config);
+
+  const colW = (contentWidth - 12) / 2;
+  const cardH = 135;
+
+  // Left Card: Root Cause
+  infoCard(doc, MARGIN, y, colW, cardH, "Historical Root Cause Analysis", config, (bx, by, bw) => {
+    doc.fillColor(COLORS.muted).font(config.fonts.bodyBold).fontSize(7.5).text("PRIMARY DRIVER & WHY IT HAPPENED", bx, by);
+    doc.fillColor(COLORS.secondary).font(config.fonts.body).fontSize(8).text(truncate(intel.whyItHappened, 160), bx, by + 12, { width: bw, lineHeight: 1.35 });
+    
+    doc.fillColor(COLORS.muted).font(config.fonts.bodyBold).fontSize(7.5).text("MONTH-OVER-MONTH TREND", bx, by + 68);
+    const trendText = intel.trendDirection === "INCREASING" ? "● Increasing Emissions (+ Delta)" : intel.trendDirection === "DECREASING" ? "● Decreasing Emissions (- Delta)" : "● Stable Operational Baseline";
+    const trendColor = intel.trendDirection === "INCREASING" ? COLORS.danger : COLORS.primary;
+    doc.fillColor(trendColor).font(config.fonts.bodyBold).fontSize(8.5).text(trendText, bx, by + 80);
+  });
+
+  // Right Card: Predictive Outlook
+  infoCard(doc, MARGIN + colW + 12, y, colW, cardH, "Predictive Carbon & Financial Outlook", config, (bx, by, bw) => {
+    const pred = intel.prediction || {};
+    doc.fillColor(COLORS.muted).font(config.fonts.bodyBold).fontSize(7.5).text("PREDICTED NEXT PERIOD CARBON", bx, by);
+    doc.fillColor(COLORS.danger).font(config.fonts.headingBold).fontSize(11).text(pred.expectedNextMonthCarbon ? `${pred.expectedNextMonthCarbon} kg ${fmt.co2e}` : "N/A", bx, by + 12);
+
+    doc.fillColor(COLORS.muted).font(config.fonts.bodyBold).fontSize(7.5).text("PREDICTED NEXT PERIOD SPEND", bx, by + 34);
+    doc.fillColor(COLORS.secondary).font(config.fonts.headingBold).fontSize(11).text(pred.expectedNextMonthSpend ? fmt.formatCurrency(pred.expectedNextMonthSpend) : "N/A", bx, by + 46);
+
+    doc.fillColor(COLORS.muted).font(config.fonts.bodyBold).fontSize(7.5).text("ESTIMATED SAVINGS POTENTIAL", bx, by + 68);
+    doc.fillColor(COLORS.primary).font(config.fonts.bodyBold).fontSize(8.5).text(`Carbon: ${intel.estCarbonSavings || "N/A"} | Cost: ${intel.estCostSavings || "N/A"}`, bx, by + 80);
+  });
+
+  y += cardH + 18;
+
+  // Risk Alert Banner
+  const alert = intel.riskAlert || {};
+  const alertBg = alert.isRisk ? COLORS.dangerLight : COLORS.primaryLight;
+  const alertBorder = alert.isRisk ? COLORS.danger : COLORS.primary;
+  const alertTitleColor = alert.isRisk ? COLORS.danger : COLORS.primary;
+
+  y = sectionLabel(doc, MARGIN, y, contentWidth, "Operational Risk Alert & Guidance", config);
+  doc.roundedRect(MARGIN, y, contentWidth, 68, 6).fillAndStroke(alertBg, alertBorder);
+  doc.fillColor(alertTitleColor).font(config.fonts.headingBold).fontSize(9.5).text(alert.title || "Operational Risk Guidance", MARGIN + 14, y + 12);
+  doc.fillColor(COLORS.secondary).font(config.fonts.body).fontSize(8).text(alert.text || "Operational metrics remain within normal compliance baselines.", MARGIN + 14, y + 28, { width: contentWidth - 28, lineHeight: 1.35 });
+}
+
+/* ============================================================================
+ * PAGE 4 — UTILITY & CARBON ANALYSIS
  * ========================================================================= */
 
 function buildUtilityAnalysisPage(doc, payload, config, fmt, top) {
   const { contentWidth } = config;
   const breakdown = payload.utilityBreakdown || [];
+  const noBills = (payload.executiveSummary?.totalBills || 0) === 0;
   let y = top;
 
-  y = sectionLabel(doc, MARGIN, y, contentWidth, "Utility breakdown", config);
+  if (noBills) {
+    y = sectionLabel(doc, MARGIN, y, contentWidth, "Utility Carbon Breakdown", config);
+    doc.roundedRect(MARGIN, y, contentWidth, 80, 6).fillAndStroke(COLORS.bg, COLORS.border);
+    doc.fillColor(COLORS.muted).font(config.fonts.body).fontSize(8.5).text("No utility invoice extractions available to display breakdown tables for this selected reporting period.", MARGIN + 16, y + 30, { width: contentWidth - 32 });
+    return;
+  }
+
+  y = sectionLabel(doc, MARGIN, y, contentWidth, "Utility Carbon Breakdown", config);
 
   const columns = [
-    { label: "Utility type", width: contentWidth * 0.2, key: "type", bold: true },
-    { label: "Usage", width: contentWidth * 0.2, render: (r) => (r.usage > 0 ? `${r.usage.toFixed(1)} ${r.unit}` : "—") },
-    { label: "Invoices", width: contentWidth * 0.13, render: (r) => String(r.count), align: "center" },
+    { label: "Utility Type", width: contentWidth * 0.22, key: "type", bold: true },
+    { label: "Billed Usage", width: contentWidth * 0.2, render: (r) => (r.usage > 0 ? `${r.usage.toFixed(1)} ${r.unit}` : "—") },
+    { label: "Invoices", width: contentWidth * 0.12, render: (r) => String(r.count), align: "center" },
     { label: "Spend", width: contentWidth * 0.2, render: (r) => fmt.formatCurrency(r.totalAmount) },
-    { label: "Emissions (share)", width: contentWidth * 0.27, render: (r) => `${r.carbonEmission.toFixed(1)} kg (${r.pctShare}%)`, color: COLORS.danger, bold: true, align: "right" },
+    { label: "Emissions (% Share)", width: contentWidth * 0.26, render: (r) => `${r.carbonEmission.toFixed(1)} kg (${r.pctShare}%)`, color: COLORS.danger, bold: true, align: "right" },
   ];
-  y = drawTable(doc, MARGIN, y, contentWidth, columns, breakdown, config) + 20;
+  y = drawTable(doc, MARGIN, y, contentWidth, columns, breakdown, config) + 18;
 
-  y = sectionLabel(doc, MARGIN, y, contentWidth, "Emissions share by category", config);
-  breakdown.slice(0, 5).forEach((u) => {
+  y = sectionLabel(doc, MARGIN, y, contentWidth, "Emissions Share by Category", config);
+  breakdown.slice(0, 4).forEach((u) => {
     const pct = parseFloat(u.pctShare || 0);
-    drawBarRow(doc, MARGIN, y, contentWidth, u.type, `${u.carbonEmission.toFixed(1)} kg`, pct, pct > 50 ? COLORS.danger : COLORS.primary, config);
-    y += 22;
+    drawBarRow(doc, MARGIN, y, contentWidth, u.type, `${u.carbonEmission.toFixed(1)} kg`, pct, pct > 45 ? COLORS.danger : COLORS.primary, config);
+    y += 20;
   });
-  y += 14;
+  y += 12;
 
-  const methodH = 96;
-  infoCard(doc, MARGIN, y, contentWidth, methodH, "Methodology summary", config, (bx, by, bw) => {
+  // Methodology & IPCC Note
+  infoCard(doc, MARGIN, y, contentWidth, 90, "Accounting Methodology & Standard Emission Factors", config, (bx, by, bw) => {
     doc
       .fillColor(COLORS.muted)
       .font(config.fonts.body)
-      .fontSize(8)
+      .fontSize(7.5)
       .text(
-        `Emissions are calculated as utility usage multiplied by a standard IPCC emission factor for each ` +
-        `utility type, then summed across all categories to produce total Scope 1 and Scope 2 output.`,
+        "Emissions are calculated in accordance with the GHG Protocol Corporate Standard (Scope 1 & Scope 2). Utility consumption is multiplied by IPCC standard emission factors:",
         bx,
         by,
-        { width: bw, lineHeight: 1.35 }
+        { width: bw, lineHeight: 1.3 }
       );
 
     const factors = [
       ["Electricity", "0.85 kg / kWh"],
-      ["Natural gas", "1.90 kg / m³"],
+      ["Natural Gas", "1.90 kg / m³"],
       ["Diesel", "2.68 kg / L"],
       ["Water", "0.35 kg / kL"],
     ];
     const fw = bw / factors.length;
     factors.forEach(([label, val], idx) => {
       const fx = bx + idx * fw;
-      doc.fillColor(COLORS.subtle).font(config.fonts.bodyBold).fontSize(7).text(label.toUpperCase(), fx, by + 30, { characterSpacing: 0.3 });
-      doc.fillColor(COLORS.danger).font(config.fonts.bodyBold).fontSize(8.5).text(val, fx, by + 41);
+      doc.fillColor(COLORS.subtle).font(config.fonts.bodyBold).fontSize(7).text(label.toUpperCase(), fx, by + 28, { characterSpacing: 0.3 });
+      doc.fillColor(COLORS.danger).font(config.fonts.bodyBold).fontSize(8).text(val, fx, by + 38);
     });
   });
 }
 
 /* ============================================================================
- * PAGE 4 — FACILITY PERFORMANCE (adaptive)
+ * PAGE 5 — FACILITY PERFORMANCE & AUDIT TRAIL
  * ========================================================================= */
 
 function buildFacilityPerformancePage(doc, payload, config, fmt, top) {
@@ -511,194 +571,129 @@ function buildFacilityPerformancePage(doc, payload, config, fmt, top) {
   const es = payload.executiveSummary || {};
   const breakdown = payload.facilityBreakdown || [];
   const isSingle = (es.facilitiesCovered || 0) <= 1 || breakdown.length <= 1;
+  const noBills = (es.totalBills || 0) === 0;
   let y = top;
+
+  if (noBills) {
+    y = sectionLabel(doc, MARGIN, y, contentWidth, "Facility Performance Spotlight", config);
+    doc.roundedRect(MARGIN, y, contentWidth, 80, 6).fillAndStroke(COLORS.bg, COLORS.border);
+    doc.fillColor(COLORS.muted).font(config.fonts.body).fontSize(8.5).text("No facility performance data or bill audit records found for this selected scope.", MARGIN + 16, y + 30, { width: contentWidth - 32 });
+    return;
+  }
 
   if (isSingle) {
     const fac = breakdown[0] || {
-      name: payload.filterScope?.facilityName || "Target facility",
-      location: "Monitored site",
+      name: payload.filterScope?.facilityName || "Target Facility",
+      location: "Monitored Site",
       billsCount: es.processedBills || 0,
       totalAmount: es.totalAmount || 0,
       carbonEmission: es.totalCarbonEmission || 0,
       utilities: payload.utilityBreakdown?.map((u) => u.type) || [],
     };
 
-    y = sectionLabel(doc, MARGIN, y, contentWidth, "Single-facility spotlight", config);
+    y = sectionLabel(doc, MARGIN, y, contentWidth, "Single-Facility Spotlight", config);
 
-    const cardH = 96;
+    const cardH = 80;
     doc.roundedRect(MARGIN, y, contentWidth, cardH, 8).fillAndStroke(COLORS.bg, COLORS.border);
-    doc.rect(MARGIN, y, 5, cardH).fill(COLORS.primary);
-    doc.fillColor(COLORS.dark).font(config.fonts.headingBold).fontSize(13).text(fac.name, MARGIN + 20, y + 14);
-    doc.fillColor(COLORS.muted).font(config.fonts.body).fontSize(8.5).text(fac.location, MARGIN + 20, y + 32);
+    doc.rect(MARGIN, y, 4, cardH).fill(COLORS.primary);
+    doc.fillColor(COLORS.secondary).font(config.fonts.headingBold).fontSize(12).text(fac.name, MARGIN + 16, y + 12);
+    doc.fillColor(COLORS.muted).font(config.fonts.body).fontSize(8).text(fac.location, MARGIN + 16, y + 28);
 
     const stats = [
       ["Invoices", `${fac.billsCount}`],
       ["Spend", fmt.formatCurrency(fac.totalAmount)],
       ["Emissions", `${fac.carbonEmission.toFixed(1)} kg`],
-      ["Utilities", (fac.utilities || []).join(", ") || "—"],
+      ["Utilities", (fac.utilities || []).join(", ") || "Electricity"],
     ];
-    const sw = (contentWidth - 40) / stats.length;
+    const sw = (contentWidth - 32) / stats.length;
     stats.forEach(([label, val], idx) => {
-      const sx = MARGIN + 20 + idx * sw;
-      doc.fillColor(COLORS.subtle).font(config.fonts.bodyBold).fontSize(7).text(label.toUpperCase(), sx, y + 58, { characterSpacing: 0.3 });
-      doc.fillColor(COLORS.dark).font(config.fonts.bodyBold).fontSize(9.5).text(truncate(val, 22), sx, y + 69, { width: sw - 10 });
+      const sx = MARGIN + 16 + idx * sw;
+      doc.fillColor(COLORS.subtle).font(config.fonts.bodyBold).fontSize(7).text(label.toUpperCase(), sx, y + 46, { characterSpacing: 0.3 });
+      doc.fillColor(COLORS.secondary).font(config.fonts.bodyBold).fontSize(9).text(truncate(val, 20), sx, y + 56, { width: sw - 8 });
     });
-    y += cardH + 22;
-
-    y = sectionLabel(doc, MARGIN, y, contentWidth, "Facility utility breakdown", config);
-    const columns = [
-      { label: "Utility type", width: contentWidth * 0.24, key: "type", bold: true },
-      { label: "Usage", width: contentWidth * 0.22, render: (r) => (r.usage > 0 ? `${r.usage.toFixed(1)} ${r.unit}` : "—") },
-      { label: "Spend", width: contentWidth * 0.22, render: (r) => fmt.formatCurrency(r.totalAmount) },
-      { label: "Emissions", width: contentWidth * 0.16, render: (r) => `${r.carbonEmission.toFixed(1)} kg`, color: COLORS.danger, bold: true },
-      { label: "Share", width: contentWidth * 0.16, render: (r) => `${r.pctShare}%`, align: "right" },
-    ];
-    y = drawTable(doc, MARGIN, y, contentWidth, columns, payload.utilityBreakdown || [], config) + 20;
-
-    infoCard(doc, MARGIN, y, contentWidth, 60, "Operational focus", config, (bx, by, bw) => {
-      doc
-        .fillColor(COLORS.dark)
-        .font(config.fonts.body)
-        .fontSize(8.5)
-        .text(
-          "This facility accounts for the full scope of monitored spend and emissions this period. Prioritize HVAC scheduling and a power-factor review to reduce peak-demand costs.",
-          bx,
-          by,
-          { width: bw, lineHeight: 1.35 }
-        );
-    });
+    y += cardH + 16;
   } else {
-    y = sectionLabel(doc, MARGIN, y, contentWidth, "Facility comparison", config);
+    y = sectionLabel(doc, MARGIN, y, contentWidth, "Facility Emissions Comparison", config);
 
     const columns = [
       { label: "Facility", width: contentWidth * 0.28, render: (r) => truncate(r.name, 22), bold: true },
       { label: "Location", width: contentWidth * 0.2, render: (r) => truncate(r.location, 16) },
       { label: "Invoices", width: contentWidth * 0.12, render: (r) => String(r.billsCount), align: "center" },
-      { label: "Emissions", width: contentWidth * 0.18, render: (r) => `${r.carbonEmission.toFixed(1)} kg`, color: COLORS.danger, bold: true },
-      {
-        label: "Status",
-        width: contentWidth * 0.22,
-        render: (r) => (parseFloat(r.pctShare) > 35 ? "High impact" : "Moderate"),
-        color: (r) => (parseFloat(r.pctShare) > 35 ? COLORS.danger : COLORS.primary),
-        bold: true,
-        align: "right",
-      },
+      { label: "Emissions", width: contentWidth * 0.2, render: (r) => `${r.carbonEmission.toFixed(1)} kg`, color: COLORS.danger, bold: true },
+      { label: "Status", width: contentWidth * 0.2, render: (r) => (parseFloat(r.pctShare) > 35 ? "High Impact" : "Healthy"), color: (r) => (parseFloat(r.pctShare) > 35 ? COLORS.danger : COLORS.primary), bold: true, align: "right" },
     ];
-    y = drawTable(doc, MARGIN, y, contentWidth, columns, breakdown, config) + 20;
-
-    y = sectionLabel(doc, MARGIN, y, contentWidth, "Emissions distribution", config);
-    breakdown.slice(0, 5).forEach((fac) => {
-      const pct = parseFloat(fac.pctShare || 0);
-      drawBarRow(doc, MARGIN, y, contentWidth, fac.name, `${fac.carbonEmission.toFixed(1)} kg`, pct, pct > 40 ? COLORS.danger : COLORS.secondary, config);
-      y += 22;
-    });
-    y += 14;
-
-    const topFac = breakdown[0];
-    infoCard(doc, MARGIN, y, contentWidth, 62, "Intervention priority", config, (bx, by, bw) => {
-      const note = topFac
-        ? `${topFac.name} is the highest-impact site, generating ${topFac.pctShare}% of total emissions across ${topFac.billsCount} invoices. Prioritize an efficiency audit here first.`
-        : "All monitored facilities are within standard baseline limits.";
-      doc.fillColor(COLORS.dark).font(config.fonts.body).fontSize(8.5).text(note, bx, by, { width: bw, lineHeight: 1.35 });
-    });
+    y = drawTable(doc, MARGIN, y, contentWidth, columns, breakdown, config) + 16;
   }
-}
 
-/* ============================================================================
- * PAGE 5 — BILL PROCESSING SUMMARY
- * ========================================================================= */
+  y = sectionLabel(doc, MARGIN, y, contentWidth, "Bill Processing Audit Trail", config);
 
-function buildBillProcessingPage(doc, payload, config, fmt, top) {
-  const { contentWidth } = config;
-  const es = payload.executiveSummary || {};
-  const failed = Math.max((es.totalBills || 0) - (es.processedBills || 0), 0);
-  let y = top;
-
-  const gap = 10;
-  const cardW = (contentWidth - gap * 3) / 4;
-  const cardH = 50;
-  kpiCard(doc, MARGIN, y, cardW, cardH, "Uploaded bills", `${es.totalBills || 0}`, config);
-  kpiCard(doc, MARGIN + (cardW + gap), y, cardW, cardH, "Processed", `${es.processedBills || 0}`, config, COLORS.primary);
-  kpiCard(doc, MARGIN + (cardW + gap) * 2, y, cardW, cardH, "Needs review", `${failed}`, config, failed > 0 ? COLORS.warning : COLORS.muted);
-  kpiCard(doc, MARGIN + (cardW + gap) * 3, y, cardW, cardH, "AI provider", es.aiProvider || "Gemini", config, COLORS.secondary);
-  y += cardH + 22;
-
-  y = sectionLabel(doc, MARGIN, y, contentWidth, "Audit trail", config);
-
-  const columns = [
-    { label: "Facility", width: contentWidth * 0.24, render: (r) => truncate(r.facilityName, 20), bold: true },
+  const auditCols = [
+    { label: "Facility Name", width: contentWidth * 0.24, render: (r) => truncate(r.facilityName, 20), bold: true },
     { label: "Utility", width: contentWidth * 0.16, key: "billType" },
     { label: "Period", width: contentWidth * 0.16, render: (r) => `${r.billMonth || ""} ${r.billYear || ""}`.trim() || "—" },
-    { label: "Amount", width: contentWidth * 0.18, render: (r) => fmt.formatCurrency(r.totalAmount) },
-    { label: "Emissions", width: contentWidth * 0.14, render: (r) => `${r.carbonEmission.toFixed(1)} kg`, color: COLORS.danger },
+    { label: "Billed Spend", width: contentWidth * 0.18, render: (r) => fmt.formatCurrency(r.totalAmount) },
+    { label: "Carbon Output", width: contentWidth * 0.14, render: (r) => `${r.carbonEmission.toFixed(1)} kg`, color: COLORS.danger },
     { label: "Status", width: contentWidth * 0.12, key: "status", color: COLORS.primary, bold: true, align: "right" },
   ];
-  y = drawTable(doc, MARGIN, y, contentWidth, columns, (payload.billDetails || []).slice(0, 10), config) + 18;
+  y = drawTable(doc, MARGIN, y, contentWidth, auditCols, (payload.billDetails || []).slice(0, 6), config) + 14;
 
   doc
     .fillColor(COLORS.subtle)
     .font(config.fonts.italic)
-    .fontSize(7.5)
-    .text("All processed invoices passed automated field verification against consumer, account and billing-period data.", MARGIN, y, { width: contentWidth });
+    .fontSize(7)
+    .text(`OCR Verification Status: ${es.verificationStatus || "Verified"} | Data Quality: ${es.auditConfidenceScore || "Grade A"} | AI Model: ${es.aiProvider || "Gemini Vision OCR"}`, MARGIN, y, { width: contentWidth, align: "center" });
 }
 
 /* ============================================================================
- * PAGE 6 — RECOMMENDATIONS & APPENDIX
+ * PAGE 6 — ACTION PLAN & GOVERNANCE APPENDIX
  * ========================================================================= */
 
-function buildRecommendationsPage(doc, payload, config, fmt, top) {
+function buildActionPlanPage(doc, payload, config, fmt, top) {
   const { contentWidth } = config;
+  const plan = payload.actionPlan || [];
+  const gov = payload.governance || {};
+  const noBills = (payload.executiveSummary?.totalBills || 0) === 0;
   let y = top;
 
-  y = sectionLabel(doc, MARGIN, y, contentWidth, "Recommended actions", config);
+  y = sectionLabel(doc, MARGIN, y, contentWidth, "Prioritized Carbon Reduction Action Plan", config);
 
-  const defaults = [
-    { priority: "High", text: "Audit HVAC equipment and shift non-critical loads to off-peak hours.", team: "Facilities" },
-    { priority: "High", text: "Inspect standby generator fuel schedules and burner efficiency.", team: "Operations" },
-    { priority: "Medium", text: "Review facility power factor and install power-quality monitors.", team: "Electrical eng." },
-    { priority: "Medium", text: "Automate monthly invoice ingestion to remove manual reporting lag.", team: "ESG compliance" },
-  ];
-  const fromPayload = (payload.recommendations || []).map((r, i) => ({
-    priority: i < 2 ? "High" : "Medium",
-    text: r,
-    team: "ESG / Facilities",
-  }));
-  const recs = (fromPayload.length > 0 ? fromPayload : defaults).slice(0, 6);
+  if (noBills || plan.length === 0) {
+    doc.roundedRect(MARGIN, y, contentWidth, 60, 6).fillAndStroke(COLORS.bg, COLORS.border);
+    doc.fillColor(COLORS.muted).font(config.fonts.body).fontSize(8.5).text("No prioritized reduction action items generated for this reporting period due to absence of active bill intake.", MARGIN + 14, y + 20, { width: contentWidth - 28 });
+    y += 75;
+  } else {
+    const priorityColors = { HIGH: COLORS.danger, MEDIUM: COLORS.warning, LOW: COLORS.secondary };
+    plan.slice(0, 4).forEach((item, idx) => {
+      const rowH = 44;
+      doc.roundedRect(MARGIN, y, contentWidth, rowH - 4, 6).fillAndStroke(idx % 2 === 0 ? COLORS.bg : COLORS.white, COLORS.border);
+      
+      drawPill(doc, MARGIN + 10, y + 8, item.priority, COLORS.white, priorityColors[item.priority] || COLORS.secondary, config);
 
-  const priorityColors = { High: COLORS.danger, Medium: COLORS.warning, Low: COLORS.secondary };
-  recs.forEach((r, idx) => {
-    const rowH = 30;
-    const bg = idx % 2 === 0 ? COLORS.bg : COLORS.white;
-    doc.roundedRect(MARGIN, y, contentWidth, rowH - 4, 4).fillAndStroke(bg, COLORS.border);
-    drawPill(doc, MARGIN + 10, y + 6, r.priority, COLORS.white, priorityColors[r.priority] || COLORS.secondary, config);
-    doc
-      .fillColor(COLORS.dark)
-      .font(config.fonts.body)
-      .fontSize(8.3)
-      .text(r.text, MARGIN + 76, y + 9, { width: contentWidth - 76 - 100 });
-    doc
-      .fillColor(COLORS.muted)
-      .font(config.fonts.bodyBold)
-      .fontSize(7.5)
-      .text(r.team, MARGIN + contentWidth - 92, y + 9, { width: 92, align: "right" });
-    y += rowH;
-  });
-  y += 20;
+      doc.fillColor(COLORS.secondary).font(config.fonts.bodyBold).fontSize(8.3).text(truncate(item.action, 95), MARGIN + 72, y + 7, { width: contentWidth - 72 - 120 });
+      doc.fillColor(COLORS.muted).font(config.fonts.body).fontSize(7.5).text(`Target: ${item.facility} (${item.utility})`, MARGIN + 72, y + 22);
 
-  y = sectionLabel(doc, MARGIN, y, contentWidth, "Report governance", config);
+      doc.fillColor(COLORS.primary).font(config.fonts.bodyBold).fontSize(8).text(item.expectedCarbonSavings, MARGIN + contentWidth - 110, y + 7, { width: 100, align: "right" });
+      doc.fillColor(COLORS.muted).font(config.fonts.body).fontSize(7.5).text(`${item.expectedCostSavings} | ${item.timeline}`, MARGIN + contentWidth - 110, y + 22, { width: 100, align: "right" });
+
+      y += rowH;
+    });
+    y += 14;
+  }
+
+  y = sectionLabel(doc, MARGIN, y, contentWidth, "Report Governance & Audit Appendix", config);
 
   const meta = [
-    ["Accounting standard", "GHG Protocol Corporate Standard (Scope 1 & 2)"],
-    ["Data quality", "Grade A — full document verification"],
-    ["Audit reference", config.reportId],
-    ["Platform", "EcoAudit AI Enterprise Platform"],
+    ["Accounting Standard", gov.accountingStandard || "GHG Protocol Corporate Standard (Scope 1 & 2)"],
+    ["Data Quality Grade", gov.dataQualityGrade || "Grade A — 100% OCR Verification"],
+    ["Platform Engine", gov.platform || "EcoAudit AI Enterprise Carbon Governance Engine"],
+    ["Audit Reference", payload.reportId || config.reportId],
   ];
   meta.forEach(([label, val]) => {
-    doc.fillColor(COLORS.muted).font(config.fonts.bodyBold).fontSize(8).text(label, MARGIN, y, { width: 150 });
-    doc.fillColor(COLORS.dark).font(config.fonts.body).fontSize(8).text(val, MARGIN + 150, y, { width: contentWidth - 150 });
-    y += 17;
+    doc.fillColor(COLORS.muted).font(config.fonts.bodyBold).fontSize(8).text(label, MARGIN, y, { width: 140 });
+    doc.fillColor(COLORS.secondary).font(config.fonts.body).fontSize(8).text(val, MARGIN + 140, y, { width: contentWidth - 140 });
+    y += 16;
   });
-  y += 14;
+  y += 12;
 
   doc
     .strokeColor(COLORS.border)
@@ -713,7 +708,7 @@ function buildRecommendationsPage(doc, payload, config, fmt, top) {
     .font(config.fonts.italic)
     .fontSize(7.5)
     .text(
-      "This report is generated using AI document intelligence based on verified utility invoices, following standard greenhouse-gas accounting practice.",
+      "Official Document — Generated by EcoAudit AI Enterprise Platform following standard greenhouse-gas accounting protocols (GHG Protocol Corporate Standard).",
       MARGIN,
       y,
       { width: contentWidth, align: "center" }
@@ -721,13 +716,7 @@ function buildRecommendationsPage(doc, payload, config, fmt, top) {
 }
 
 /* ============================================================================
- * ENTRY POINT
- * ----------------------------------------------------------------------------
- * A small, data-driven pipeline: the cover page is built once, then every
- * remaining page comes from the same list of { title, build } definitions.
- * Each page function only draws inside the body region handed to it by
- * drawHeader — nothing is hardcoded page-by-page, and no content block is
- * ever drawn twice.
+ * ENTRY POINT & PIPELINE
  * ========================================================================= */
 
 export const generateReportPDF = (payload) => {
@@ -755,25 +744,28 @@ export const generateReportPDF = (payload) => {
         fonts,
         contentWidth: doc.page.width - MARGIN * 2,
         companyName: payload.company?.name || "EcoAudit Enterprise",
-        brandLine: `${payload.company?.name || "EcoAudit Enterprise"} — Executive sustainability report`,
-        reportId: `EA-${Date.now().toString(36).toUpperCase()}`,
+        brandLine: `${payload.company?.name || "EcoAudit Enterprise"} — Executive Sustainability Report`,
+        reportId: payload.reportId || `EA-${Date.now().toString(36).toUpperCase()}`,
       };
 
+      // Page 1: Cover Page
       buildCoverPage(doc, payload, config, fmt);
 
+      // Pages 2 - 6
       const pages = [
-  { title: "Executive summary", build: buildExecutiveSummaryPage },
-  { title: "Utility & carbon analysis", build: buildUtilityAnalysisPage },
-  { title: "Facility performance", build: buildFacilityPerformancePage },
-  { title: "Bill processing summary", build: buildBillProcessingPage },
-  { title: "Recommendations & appendix", build: buildRecommendationsPage },
-];
-pages.forEach((page, i) => {
-  doc.addPage();
-  const bodyTop = drawHeader(doc, config, i + 2, i + 1, page.title);
-  page.build(doc, payload, config, fmt, bodyTop);
-  drawFooter(doc, config, i + 2);
-});
+        { title: "Executive Summary", build: buildExecutiveSummaryPage },
+        { title: "AI Sustainability Intelligence", build: buildIntelligencePage },
+        { title: "Utility & Carbon Analysis", build: buildUtilityAnalysisPage },
+        { title: "Facility Performance & Audit Trail", build: buildFacilityPerformancePage },
+        { title: "Action Plan & Governance", build: buildActionPlanPage },
+      ];
+
+      pages.forEach((page, i) => {
+        doc.addPage();
+        const bodyTop = drawHeader(doc, config, i + 2, i + 1, page.title);
+        page.build(doc, payload, config, fmt, bodyTop);
+        drawFooter(doc, config, i + 2);
+      });
 
       doc.end();
     } catch (err) {

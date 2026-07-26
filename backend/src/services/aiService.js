@@ -31,7 +31,8 @@ const downloadBill = async (billFileKeyOrUrl) => {
 
 // Detect MIME type
 const getMimeType = (billFileKeyOrUrl) => {
-  return mime.lookup(billFileKeyOrUrl) || "application/pdf";
+  const key = getS3KeyFromUrl(billFileKeyOrUrl);
+  return mime.lookup(key) || mime.lookup(billFileKeyOrUrl) || "application/pdf";
 };
 
 // Normalizes and validates AI extracted JSON structure
@@ -54,15 +55,25 @@ const validateAndNormalizeExtractedData = (data) => {
     }
   });
 
+  const utilities = Array.isArray(data.utilities) ? data.utilities : [];
+  const detectedTypes = Array.from(
+    new Set(utilities.map((u) => u.type || u.utilityType).filter(Boolean))
+  );
+
+  let billType = data.billType;
+  if (!billType || billType === "Auto Detect") {
+    billType = detectedTypes.length > 0 ? detectedTypes.join(", ") : "Electricity";
+  }
+
   return {
     consumerName: data.consumerName || null,
     meterNumber: data.meterNumber || null,
     billDate: data.billDate || null,
     billMonth: data.billMonth || null,
     billYear: data.billYear || null,
-    billType: data.billType || null,
+    billType: billType,
     totalAmount: data.totalAmount != null ? Number(data.totalAmount) : null,
-    utilities: Array.isArray(data.utilities) ? data.utilities : [],
+    utilities: utilities,
     aiExtractedData: cleanAiExtractedData,
   };
 };

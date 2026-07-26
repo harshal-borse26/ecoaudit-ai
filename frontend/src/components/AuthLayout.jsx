@@ -7,6 +7,17 @@ const AuthLayout = ({ children, title, subtitle, maxWidth = "max-w-[420px]" }) =
   return (
     <div className="min-h-screen lg:h-screen lg:max-h-screen w-full bg-slate-100/90 md:bg-gradient-to-br md:from-emerald-50/60 md:via-slate-100 md:to-teal-50/60 flex items-center justify-center p-3 sm:p-5 lg:p-6 font-sans antialiased text-[#1E293B] selection:bg-[#2E7D32]/10 selection:text-[#2E7D32] relative overflow-x-hidden overflow-y-auto lg:overflow-y-hidden">
       
+      {/* ENFORCE REMOVAL OF OUTER WINDOW SCROLLBAR ON DESKTOP */}
+      <style>{`
+        @media (min-width: 1024px) {
+          html, body, #root {
+            overflow: hidden !important;
+            height: 100% !important;
+            max-height: 100% !important;
+          }
+        }
+      `}</style>
+
       {/* SUBTLE BACKGROUND AMBIENT GLOW BLOBS */}
       <div className="absolute top-0 left-1/4 w-[450px] h-[450px] bg-emerald-300/15 rounded-full blur-[130px] pointer-events-none -translate-y-1/2" />
       <div className="absolute bottom-0 right-1/4 w-[450px] h-[450px] bg-teal-300/15 rounded-full blur-[130px] pointer-events-none translate-y-1/2" />
@@ -16,11 +27,11 @@ const AuthLayout = ({ children, title, subtitle, maxWidth = "max-w-[420px]" }) =
         initial={{ opacity: 0, y: 15, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
-        className="w-full max-w-[1060px] bg-white rounded-[28px] sm:rounded-[32px] shadow-[0_20px_60px_rgba(15,23,42,0.1)] border border-[#E2E8F0] p-3.5 sm:p-5 lg:p-6 flex flex-col lg:flex-row gap-5 lg:gap-6 lg:h-[580px] xl:h-[600px] relative overflow-hidden my-auto"
+        className="w-full max-w-[1040px] bg-white rounded-[28px] sm:rounded-[32px] shadow-[0_20px_60px_rgba(15,23,42,0.1)] border border-[#E2E8F0] p-3.5 sm:p-5 lg:p-6 flex flex-col lg:flex-row gap-5 lg:gap-6 lg:h-[550px] xl:h-[570px] relative overflow-hidden my-auto"
       >
         
         {/* LEFT PANEL - FORM AREA (BRIGHT, MINIMAL, ELEGANT WHITE PANEL) */}
-        <div className="w-full lg:w-[50%] xl:w-[48%] flex flex-col justify-between p-3 sm:p-5 lg:p-6 overflow-y-auto">
+        <div className="w-full lg:w-[50%] xl:w-[48%] flex flex-col justify-between p-3 sm:p-5 lg:p-6 lg:overflow-y-auto lg:max-h-full">
           
           {/* TOP LOGO */}
           <div className="mb-4 sm:mb-5">
@@ -84,7 +95,7 @@ const AuthLayout = ({ children, title, subtitle, maxWidth = "max-w-[420px]" }) =
             <motion.div
               animate={{ y: [-4, 4, -4] }}
               transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-              className="relative max-w-[250px] xl:max-w-[280px] w-full"
+              className="relative max-w-[220px] xl:max-w-[245px] w-full"
             >
               <img
                 src="/eco_3d_hero_illustration.png"

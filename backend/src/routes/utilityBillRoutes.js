@@ -24,7 +24,7 @@ router.post(
 router.get("/", authenticate, getAllBills);
 router.get("/:id/file-url", authenticate, getBillFileUrl);
 router.get("/:id", authenticate, getBill);
-router.put("/:id", authenticate, editBill);
+router.put("/:id", authenticate, upload.single("billFile"), editBill);
 router.delete("/:id", authenticate, removeBill);
 router.post("/test-ai", testAI);
 router.post("/:id/process", authenticate, processBill);

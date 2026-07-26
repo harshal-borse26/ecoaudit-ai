@@ -35,7 +35,7 @@ export const createBill = async (data, companyId) => {
       billFileKey: billFileKey || null,
       billMonth,
       billYear: typeof billYear === "string" ? parseInt(billYear, 10) : billYear,
-      billType: billType || "Electricity",
+      billType: billType || "Auto Detect",
       facilityId,
       // status defaults to PENDING via Prisma schema
     },
@@ -223,7 +223,18 @@ export const processBillAI = async (billId, companyId) => {
       }
     });
 
-    const billType = extractedData.billType || bill.billType || (extractedData.utilities?.[0]?.type) || "Electricity";
+    const utilitiesList = Array.isArray(extractedData.utilities) ? extractedData.utilities : [];
+    const detectedTypes = Array.from(
+      new Set(utilitiesList.map((u) => u.type || u.utilityType).filter(Boolean))
+    );
+
+    let billType = extractedData.billType;
+    if (!billType || billType === "Auto Detect") {
+      billType = detectedTypes.length > 0
+        ? detectedTypes.join(", ")
+        : (bill.billType && bill.billType !== "Auto Detect" ? bill.billType : "Electricity");
+    }
+
     const parsedBillDate = parseValidDate(extractedData.billDate);
 
     const updatedBill = await prisma.utilityBill.update({
@@ -252,8 +263,6 @@ export const processBillAI = async (billId, companyId) => {
         billId,
       },
     });
-
-    const utilitiesList = Array.isArray(extractedData.utilities) ? extractedData.utilities : [];
 
     for (const utility of utilitiesList) {
       const uType = utility.type || "Electricity";
