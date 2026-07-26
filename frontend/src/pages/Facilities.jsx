@@ -28,6 +28,14 @@ import {
   X
 } from "lucide-react";
 
+import { getCache, setCache, invalidateCache } from "../hooks/useCache";
+import { useDebounce } from "../hooks/useDebounce";
+import {
+  SkeletonPageHeader,
+  SkeletonKpiGrid,
+  SkeletonTableRows,
+} from "../components/Skeleton";
+
 const FACILITY_TYPES = ["Office", "Warehouse", "Manufacturing", "Retail", "Data Center", "Hospital", "Other"];
 
 const emptyForm = {
@@ -43,36 +51,41 @@ const emptyForm = {
 const Facilities = () => {
   const navigate = useNavigate();
 
+  const cachedFacs  = getCache("facilities_list");
+  const cachedBills = getCache("bills_list");
+
   // Core Data States
-  const [facilities, setFacilities] = useState([]);
-  const [allBills, setAllBills] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [facilities, setFacilities] = useState(cachedFacs || []);
+  const [allBills, setAllBills]     = useState(cachedBills || []);
+  const [loading, setLoading]       = useState(!cachedFacs);
+  const [error, setError]           = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
   // Search & Filter States
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("ALL");
-  const [typeFilter, setTypeFilter] = useState("ALL");
+  const [search, setSearch]         = useState("");
+  const debouncedSearch             = useDebounce(search, 300);
+
+  const [statusFilter, setStatusFilter]   = useState("ALL");
+  const [typeFilter, setTypeFilter]       = useState("ALL");
   const [utilityFilter, setUtilityFilter] = useState("ALL");
-  const [sortBy, setSortBy] = useState("RECENT");
+  const [sortBy, setSortBy]               = useState("RECENT");
 
   // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage]     = useState(1);
   const pageSize = 5;
 
   // Modal form states
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState("create");
-  const [form, setForm] = useState({ ...emptyForm });
-  const [editId, setEditId] = useState(null);
+  const [form, setForm]           = useState({ ...emptyForm });
+  const [editId, setEditId]       = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
 
   // Right-Side Sliding Drawer Workspace State
   const [drawerFacilityId, setDrawerFacilityId] = useState(null);
-  const [showDrawer, setShowDrawer] = useState(false);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [showDrawer, setShowDrawer]             = useState(false);
+  const [activeTab, setActiveTab]               = useState("overview");
 
   // Open drawer handler
   const openFacilityDrawer = (facility) => {
@@ -82,8 +95,8 @@ const Facilities = () => {
   };
 
   // Fetch facilities and bills from backend APIs
-  const fetchFacilities = async () => {
-    setLoading(true);
+  const fetchFacilities = async (silent = false) => {
+    if (!silent && !cachedFacs) setLoading(true);
     setError("");
     try {
       const [facRes, billsRes] = await Promise.all([
@@ -91,20 +104,24 @@ const Facilities = () => {
         billService.getAll()
       ]);
       if (facRes.data?.success) {
-        setFacilities(facRes.data.data || []);
+        const fetchedFacs = facRes.data.data || [];
+        setFacilities(fetchedFacs);
+        setCache("facilities_list", fetchedFacs, 5 * 60 * 1000);
       }
       if (billsRes.data?.success) {
-        setAllBills(billsRes.data.data || []);
+        const fetchedBills = billsRes.data.data || [];
+        setAllBills(fetchedBills);
+        setCache("bills_list", fetchedBills, 2 * 60 * 1000);
       }
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to sync facilities data from backend.");
+      if (!silent) setError(err.response?.data?.message || "Failed to sync facilities data from backend.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchFacilities();
+    fetchFacilities(Boolean(cachedFacs));
   }, []);
 
   const handleChange = (e) => {
@@ -249,10 +266,11 @@ const Facilities = () => {
   // Search & Filter rows mapping
   const filteredAndSorted = useMemo(() => {
     let result = enrichedFacilities.filter((fac) => {
-      const matchSearch = fac.name.toLowerCase().includes(search.toLowerCase()) ||
-        fac.city.toLowerCase().includes(search.toLowerCase()) ||
-        fac.type.toLowerCase().includes(search.toLowerCase()) ||
-        fac.state.toLowerCase().includes(search.toLowerCase());
+      const matchSearch =
+        fac.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        fac.city.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        fac.type.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        fac.state.toLowerCase().includes(debouncedSearch.toLowerCase());
 
       const matchStatus = statusFilter === "ALL" || fac.healthStatus.label.toUpperCase() === statusFilter.toUpperCase();
       const matchType = typeFilter === "ALL" || fac.type.toUpperCase() === typeFilter.toUpperCase();
@@ -270,7 +288,7 @@ const Facilities = () => {
     }
 
     return result;
-  }, [enrichedFacilities, search, statusFilter, typeFilter, utilityFilter, sortBy]);
+  }, [enrichedFacilities, debouncedSearch, statusFilter, typeFilter, utilityFilter, sortBy]);
 
   // Pagination bounds
   const totalPages = Math.ceil(filteredAndSorted.length / pageSize) || 1;
@@ -287,9 +305,13 @@ const Facilities = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[65vh] py-12 text-[#7A8597] space-y-3">
-        <RefreshCw className="w-9 h-9 animate-spin text-[#2F5241]" />
-        <p className="text-sm font-extrabold text-[#152A38]">Syncing monitored facilities data from backend...</p>
+      <div className="space-y-6">
+        <SkeletonPageHeader />
+        <SkeletonKpiGrid />
+        <div className="bg-[#F7F6EE] border border-[#D4D4C4] rounded-[24px] p-6 shadow-xs">
+          <div className="h-5 w-48 bg-[#EEEDDF] rounded-lg mb-4" />
+          <SkeletonTableRows count={5} />
+        </div>
       </div>
     );
   }

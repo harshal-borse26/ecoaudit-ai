@@ -3,6 +3,8 @@ import { facilityService } from "../services/facilityService";
 import { billService } from "../services/billService";
 import { reportService } from "../services/reportService";
 import { formatCurrency, formatDate, getStatusBadgeClass } from "../utils/helpers";
+import { getCache, setCache } from "../hooks/useCache";
+import { SkeletonPageHeader, SkeletonDashboardCharts } from "../components/Skeleton";
 import {
   FileText,
   Sparkles,
@@ -84,12 +86,15 @@ const PREVIEW_SECTIONS = [
 ];
 
 const Reports = () => {
-  const [facilities, setFacilities] = useState([]);
-  const [bills, setBills] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const cachedFacs  = getCache("facilities_list");
+  const cachedBills = getCache("bills_list");
+
+  const [facilities, setFacilities] = useState(cachedFacs || []);
+  const [bills, setBills]           = useState(cachedBills || []);
+  const [loading, setLoading]       = useState(!cachedFacs);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError]           = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const [activeSection, setActiveSection] = useState("section-cover");
   const [showExportMenu, setShowExportMenu] = useState(false);
@@ -126,7 +131,7 @@ const Reports = () => {
 
   // Initial Data Fetch
   const fetchInitialData = async () => {
-    setLoading(true);
+    if (!cachedFacs) setLoading(true);
     setError("");
     try {
       const [facilitiesRes, billsRes] = await Promise.all([
@@ -134,8 +139,16 @@ const Reports = () => {
         billService.getAll(),
       ]);
 
-      if (facilitiesRes.data?.success) setFacilities(facilitiesRes.data.data || []);
-      if (billsRes.data?.success) setBills(billsRes.data.data || []);
+      if (facilitiesRes.data?.success) {
+        const fList = facilitiesRes.data.data || [];
+        setFacilities(fList);
+        setCache("facilities_list", fList, 5 * 60 * 1000);
+      }
+      if (billsRes.data?.success) {
+        const bList = billsRes.data.data || [];
+        setBills(bList);
+        setCache("bills_list", bList, 2 * 60 * 1000);
+      }
 
       // Trigger initial preview for company-wide scope
       await handleGeneratePreview({
@@ -378,12 +391,9 @@ const Reports = () => {
 
   if (loading) {
     return (
-      <div className="bg-[#F7F6EE] border border-[#D4D4C4] rounded-[24px] p-16 text-center flex flex-col items-center justify-center space-y-4 my-6">
-        <RefreshCw className="w-8 h-8 animate-spin text-[#2F5241]" />
-        <div>
-          <h3 className="text-sm font-extrabold text-[#152A38]">Initializing Enterprise Sustainability Reporting Center...</h3>
-          <p className="text-xs font-semibold text-[#7A8597] mt-1">Loading multi-site scope models, processed utility bills & AI extractions.</p>
-        </div>
+      <div className="space-y-6">
+        <SkeletonPageHeader />
+        <SkeletonDashboardCharts />
       </div>
     );
   }

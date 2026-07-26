@@ -31,6 +31,13 @@ import {
   Flame,
 } from "lucide-react";
 import CarbonTrendChartSection from "../components/CarbonTrendChartSection";
+import { getCache, setCache } from "../hooks/useCache";
+import {
+  SkeletonPageHeader,
+  SkeletonKpiGrid,
+  SkeletonDashboardCharts,
+  SkeletonTableRows,
+} from "../components/Skeleton";
 
 // ─── Animated Counter Hook ─────────────────────────────────────────────────
 function useCountUp(target, duration = 1200, started = true) {
@@ -155,25 +162,32 @@ function KpiCard({ label, icon: Icon, iconBg, iconColor, value, prefix = "", suf
 const Dashboard = () => {
   const navigate = useNavigate();
 
-  // ── State (100% preserved) ────────────────────────────────────────────
-  const [summary, setSummary]                     = useState(null);
-  const [recentBills, setRecentBills]             = useState([]);
-  const [utilityDist, setUtilityDist]             = useState([]);
-  const [monthlyTrend, setMonthlyTrend]           = useState([]);
-  const [facilityEmissions, setFacilityEmissions] = useState([]);
-  const [allFacilities, setAllFacilities]         = useState([]);
-  const [allBills, setAllBills]                   = useState([]);
-  const [billCounts, setBillCounts]               = useState({ pending: 0, processing: 0, completed: 0, failed: 0 });
-  const [loading, setLoading]                     = useState(true);
+  // Try initializing state from cache for INSTANT load
+  const cachedData = getCache("dashboard_all_data");
+
+  const [summary, setSummary]                     = useState(cachedData?.summary || null);
+  const [recentBills, setRecentBills]             = useState(cachedData?.recentBills || []);
+  const [utilityDist, setUtilityDist]             = useState(cachedData?.utilityDist || []);
+  const [monthlyTrend, setMonthlyTrend]           = useState(cachedData?.monthlyTrend || []);
+  const [facilityEmissions, setFacilityEmissions] = useState(cachedData?.facilityEmissions || []);
+  const [allFacilities, setAllFacilities]         = useState(cachedData?.allFacilities || []);
+  const [allBills, setAllBills]                   = useState(cachedData?.allBills || []);
+  const [billCounts, setBillCounts]               = useState(
+    cachedData?.billCounts || { pending: 0, processing: 0, completed: 0, failed: 0 }
+  );
+  const [loading, setLoading]                     = useState(!cachedData);
+  const [isRefreshing, setIsRefreshing]           = useState(false);
   const [error, setError]                         = useState("");
-  const [lastUpdated, setLastUpdated]             = useState(new Date());
+  const [lastUpdated, setLastUpdated]             = useState(cachedData?.lastUpdated ? new Date(cachedData.lastUpdated) : new Date());
   const [activeInsightTab, setActiveInsightTab]   = useState(0);
   const [hoveredPoint, setHoveredPoint]           = useState(null);
 
-  // ── Fetch (100% preserved) ────────────────────────────────────────────
-  const fetchDashboardData = async () => {
-    setLoading(true);
+  // ── Fetch ─────────────────────────────────────────────────────────────
+  const fetchDashboardData = async (silent = false) => {
+    if (!silent && !cachedData) setLoading(true);
+    if (silent) setIsRefreshing(true);
     setError("");
+
     try {
       const [
         summaryRes,
@@ -193,35 +207,70 @@ const Dashboard = () => {
         facilityService.getAll(),
       ]);
 
-      if (summaryRes.data?.success)           setSummary(summaryRes.data.data);
-      if (recentBillsRes.data?.success)       setRecentBills(recentBillsRes.data.data);
-      if (utilityDistRes.data?.success)       setUtilityDist(utilityDistRes.data.data);
-      if (monthlyTrendRes.data?.success)      setMonthlyTrend(monthlyTrendRes.data.data);
-      if (facilityEmissionsRes.data?.success) setFacilityEmissions(facilityEmissionsRes.data.data);
-      if (facilitiesRes.data?.success)        setAllFacilities(facilitiesRes.data.data || []);
+      const sData  = summaryRes.data?.success ? summaryRes.data.data : null;
+      const rBills = recentBillsRes.data?.success ? recentBillsRes.data.data : [];
+      const uDist  = utilityDistRes.data?.success ? utilityDistRes.data.data : [];
+      const mTrend = monthlyTrendRes.data?.success ? monthlyTrendRes.data.data : [];
+      const fEmiss = facilityEmissionsRes.data?.success ? facilityEmissionsRes.data.data : [];
+      const facs   = facilitiesRes.data?.success ? facilitiesRes.data.data || [] : [];
+      const bills  = allBillsRes.data?.success ? allBillsRes.data.data || [] : [];
 
-      if (allBillsRes.data?.success) {
-        const bills = allBillsRes.data.data || [];
-        setAllBills(bills);
-        setBillCounts({
-          pending:    bills.filter((b) => b.status === "PENDING").length,
-          processing: bills.filter((b) => b.status === "PROCESSING").length,
-          completed:  bills.filter((b) => b.status === "COMPLETED").length,
-          failed:     bills.filter((b) => b.status === "FAILED").length,
-        });
-      }
+      const bCounts = {
+        pending:    bills.filter((b) => b.status === "PENDING").length,
+        processing: bills.filter((b) => b.status === "PROCESSING").length,
+        completed:  bills.filter((b) => b.status === "COMPLETED").length,
+        failed:     bills.filter((b) => b.status === "FAILED").length,
+      };
 
-      setLastUpdated(new Date());
+      if (sData)  setSummary(sData);
+      if (rBills) setRecentBills(rBills);
+      if (uDist)  setUtilityDist(uDist);
+      if (mTrend) setMonthlyTrend(mTrend);
+      if (fEmiss) setFacilityEmissions(fEmiss);
+      setAllFacilities(facs);
+      setAllBills(bills);
+      setBillCounts(bCounts);
+
+      const updatedTime = new Date();
+      setLastUpdated(updatedTime);
+
+      // Save to cache (3-min TTL)
+      setCache(
+        "dashboard_all_data",
+        {
+          summary: sData,
+          recentBills: rBills,
+          utilityDist: uDist,
+          monthlyTrend: mTrend,
+          facilityEmissions: fEmiss,
+          allFacilities: facs,
+          allBills: bills,
+          billCounts: bCounts,
+          lastUpdated: updatedTime.toISOString(),
+        },
+        3 * 60 * 1000
+      );
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to load executive sustainability metrics from backend.");
+      if (!silent) setError(err.response?.data?.message || "Failed to load executive sustainability metrics from backend.");
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
-  useEffect(() => { fetchDashboardData(); }, []);
   useEffect(() => {
-    const handler = () => fetchDashboardData();
+    fetchDashboardData(Boolean(cachedData));
+
+    // Background auto-refetch every 3 minutes
+    const timer = setInterval(() => {
+      fetchDashboardData(true);
+    }, 3 * 60 * 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const handler = () => fetchDashboardData(true);
     window.addEventListener("ecoaudit-data-changed", handler);
     return () => window.removeEventListener("ecoaudit-data-changed", handler);
   }, []);
@@ -443,11 +492,14 @@ const Dashboard = () => {
   // ── Loading State ─────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[65vh] py-12">
-        <div className="w-16 h-16 rounded-2xl bg-[#EAF2ED] flex items-center justify-center mb-5">
-          <RefreshCw className="w-7 h-7 animate-spin text-[#2F5241]" />
+      <div className="space-y-7">
+        <SkeletonPageHeader />
+        <SkeletonKpiGrid />
+        <SkeletonDashboardCharts />
+        <div className="bg-[#F7F6EE] border border-[#DDDDD0] rounded-[24px] p-6 shadow-[0_2px_12px_rgba(21,42,56,0.06)]">
+          <div className="h-5 w-48 bg-[#EEEDDF] rounded-lg mb-4" />
+          <SkeletonTableRows count={3} />
         </div>
-        <p className="text-sm font-bold text-[#7A8597]">Syncing sustainability intelligence…</p>
       </div>
     );
   }

@@ -3,6 +3,9 @@ import { createPortal } from "react-dom";
 import { billService } from "../services/billService";
 import { facilityService } from "../services/facilityService";
 import { formatCurrency, formatDate, getStatusBadgeClass } from "../utils/helpers";
+import { getCache, setCache, invalidateCache } from "../hooks/useCache";
+import { useDebounce } from "../hooks/useDebounce";
+import { SkeletonTableRows } from "../components/Skeleton";
 import {
   FileText,
   Upload,
@@ -79,18 +82,25 @@ const formatKeyToLabel = (key) => {
 };
 
 const dispatchDataChanged = () => {
+  invalidateCache("bills_list");
+  invalidateCache("dashboard_all_data");
   window.dispatchEvent(new CustomEvent("ecoaudit-data-changed"));
 };
 
 const Bills = () => {
-  const [bills, setBills] = useState([]);
-  const [facilities, setFacilities] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const cachedBills = getCache("bills_list");
+  const cachedFacs  = getCache("facilities_list");
+
+  const [bills, setBills] = useState(cachedBills || []);
+  const [facilities, setFacilities] = useState(cachedFacs || []);
+  const [loading, setLoading] = useState(!cachedBills);
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
-  // Filter States
+  // Filter States & Debounce
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
+
   const [facilityFilter, setFacilityFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [typeFilter, setTypeFilter] = useState("ALL");
@@ -147,9 +157,9 @@ const Bills = () => {
     drawerBillRef.current = drawerBill;
   }, [drawerBill]);
 
-  const fetchData = async () => {
+  const fetchData = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent && !cachedBills) setLoading(true);
       setError("");
       const [billsRes, facsRes] = await Promise.all([
         billService.getAll(),
@@ -159,6 +169,7 @@ const Bills = () => {
       if (billsRes.data?.success) {
         const fetchedBills = billsRes.data.data || [];
         setBills(fetchedBills);
+        setCache("bills_list", fetchedBills, 2 * 60 * 1000);
 
         // Resume polling for bills in PROCESSING state
         fetchedBills.forEach((b) => {
@@ -170,17 +181,19 @@ const Bills = () => {
       }
 
       if (facsRes.data?.success) {
-        setFacilities(facsRes.data.data || []);
+        const fetchedFacs = facsRes.data.data || [];
+        setFacilities(fetchedFacs);
+        setCache("facilities_list", fetchedFacs, 5 * 60 * 1000);
       }
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to load utility bill document data.");
+      if (!silent) setError(err.response?.data?.message || "Failed to load utility bill document data.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData();
+    fetchData(Boolean(cachedBills));
     return () => {
       Object.values(pollingTimers.current).forEach(clearInterval);
     };
@@ -426,27 +439,48 @@ const Bills = () => {
   // Filter logic
   const filteredBills = useMemo(() => {
     return bills.filter((b) => {
+      // Facility filter
       if (facilityFilter !== "ALL" && b.facilityId !== facilityFilter) return false;
+
+      // Status filter
       if (statusFilter !== "ALL" && b.status !== statusFilter) return false;
-      if (typeFilter !== "ALL" && !b.billType?.toLowerCase().includes(typeFilter.toLowerCase())) return false;
-      if (monthFilter !== "ALL" && b.billMonth?.toLowerCase() !== monthFilter.toLowerCase()) return false;
-      if (yearFilter !== "ALL" && b.billYear?.toString() !== yearFilter) return false;
 
-      if (search.trim()) {
-        const q = search.toLowerCase();
-        const facName = b.facility?.name?.toLowerCase() || "";
-        const consumer = b.consumerName?.toLowerCase() || "";
-        const meter = b.meterNumber?.toLowerCase() || "";
-        const type = b.billType?.toLowerCase() || "";
-        const status = b.status?.toLowerCase() || "";
-        const month = b.billMonth?.toLowerCase() || "";
+      // Bill type filter
+      if (typeFilter !== "ALL") {
+        const types = (b.billType || "").toLowerCase();
+        if (!types.includes(typeFilter.toLowerCase())) return false;
+      }
 
-        return facName.includes(q) || consumer.includes(q) || meter.includes(q) || type.includes(q) || status.includes(q) || month.includes(q);
+      // Month filter
+      if (monthFilter !== "ALL" && b.billMonth !== monthFilter) return false;
+
+      // Year filter
+      if (yearFilter !== "ALL" && String(b.billYear) !== String(yearFilter)) return false;
+
+      // Search text filter
+      if (debouncedSearch.trim()) {
+        const query = debouncedSearch.toLowerCase().trim();
+        const facilityName = (b.facility?.name || "").toLowerCase();
+        const consumerName = (b.consumerName || "").toLowerCase();
+        const meterNo = (b.meterNumber || "").toLowerCase();
+        const billMonth = (b.billMonth || "").toLowerCase();
+        const billYear = String(b.billYear || "").toLowerCase();
+        const billType = (b.billType || "").toLowerCase();
+
+        const matches =
+          facilityName.includes(query) ||
+          consumerName.includes(query) ||
+          meterNo.includes(query) ||
+          billMonth.includes(query) ||
+          billYear.includes(query) ||
+          billType.includes(query);
+
+        if (!matches) return false;
       }
 
       return true;
     });
-  }, [bills, facilityFilter, statusFilter, typeFilter, monthFilter, yearFilter, search]);
+  }, [bills, facilityFilter, statusFilter, typeFilter, monthFilter, yearFilter, debouncedSearch]);
 
   const resetFilters = () => {
     setSearch("");
@@ -616,10 +650,7 @@ const Bills = () => {
 
       {/* DOCUMENT CARDS LIST */}
       {loading ? (
-        <div className="bg-[#F7F6EE] border border-[#D4D4C4] rounded-[24px] p-16 text-center flex flex-col items-center justify-center space-y-3">
-          <RefreshCw className="w-7 h-7 animate-spin text-[#2F5241]" />
-          <p className="text-xs font-bold text-[#7A8597]">Loading utility bill document records...</p>
-        </div>
+        <SkeletonTableRows count={6} />
       ) : paginatedBills.length === 0 ? (
         <div className="bg-[#F7F6EE] border border-[#D4D4C4] rounded-[24px] p-16 text-center space-y-4">
           <div className="w-14 h-14 rounded-2xl bg-[#EEEDDF] flex items-center justify-center mx-auto">
