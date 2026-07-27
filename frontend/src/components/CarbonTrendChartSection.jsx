@@ -372,7 +372,7 @@ export default function CarbonTrendChartSection({
     <div className="dash-card bg-[#F7F6EE] border border-[#DDDDD0] rounded-[24px] p-6 shadow-[0_2px_12px_rgba(21,42,56,0.06)] relative overflow-hidden h-full flex flex-col justify-between">
       
       {/* ── CARD HEADER & ANALYTICS SCOPE CONTROLS ───────────────────────── */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-5 border-b border-[#DDDDD0] pb-4">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-5 border-b border-[#DDDDD0] pb-4">
         <div>
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-[#2F5241] text-[#E4E5DB] flex items-center justify-center shadow-xs">
@@ -390,9 +390,9 @@ export default function CarbonTrendChartSection({
         </div>
 
         {/* Filters Controls Toolbar */}
-        <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-2.5 w-full xl:w-auto">
-          {/* Main Controls Row (Always visible and scrollable) */}
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-0.5 w-full xl:w-auto">
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-2.5 w-full lg:w-auto">
+          {/* Main Controls Row (Always visible and scrollable without browser scrollbar tracks) */}
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-0.5 w-full lg:w-auto">
             {/* Time Range Selector */}
             <div className="flex items-center bg-[#EEEDDF] p-1 rounded-xl border border-[#DDDDD0] shrink-0">
               {["6M", "1Y", "ALL"].map((range) => (
@@ -435,7 +435,7 @@ export default function CarbonTrendChartSection({
             {/* Mobile Filter Toggle */}
             <button
               onClick={() => setShowMobileFilters(!showMobileFilters)}
-              className="xl:hidden px-3 py-1.5 text-xs font-extrabold rounded-xl border bg-[#EEEDDF] text-[#152A38] border-[#DDDDD0] flex items-center gap-1.5 cursor-pointer shrink-0 hover:bg-[#E4E3D6] transition-colors"
+              className="lg:hidden px-3 py-1.5 text-xs font-extrabold rounded-xl border bg-[#EEEDDF] text-[#152A38] border-[#DDDDD0] flex items-center gap-1.5 cursor-pointer shrink-0 hover:bg-[#E4E3D6] transition-colors"
             >
               <Filter className="w-3.5 h-3.5 text-[#2F5241]" />
               <span>Filters</span>
@@ -446,14 +446,14 @@ export default function CarbonTrendChartSection({
           </div>
 
           {/* Collapsible Selectors (Visible on desktop, toggled on mobile) */}
-          <div className={`xl:flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full xl:w-auto ${
+          <div className={`lg:flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto ${
             showMobileFilters 
-              ? "flex animate-slideDown bg-[#EEEDDF]/50 p-3 rounded-2xl border border-[#DDDDD0] mt-1.5 xl:mt-0 xl:p-0 xl:bg-transparent xl:border-0" 
-              : "hidden xl:flex"
+              ? "flex animate-slideDown bg-[#EEEDDF]/50 p-3 rounded-2xl border border-[#DDDDD0] mt-1.5 lg:mt-0 lg:p-0 lg:bg-transparent lg:border-0" 
+              : "hidden lg:flex"
           }`}>
             {/* Facility Scope Filter Dropdown */}
-            <div className="relative flex-1 min-w-[140px] sm:flex-initial">
-              <label className="block xl:hidden text-[9px] font-extrabold text-[#7A8597] uppercase mb-1">Site / Facility</label>
+            <div className="relative flex-1 min-w-[140px] sm:flex-initial lg:w-[170px]">
+              <label className="block lg:hidden text-[9px] font-extrabold text-[#7A8597] uppercase mb-1">Site / Facility</label>
               <select
                 value={selectedFacility}
                 onChange={(e) => setSelectedFacility(e.target.value)}
@@ -469,8 +469,8 @@ export default function CarbonTrendChartSection({
             </div>
 
             {/* Utility Filter Dropdown */}
-            <div className="relative flex-1 min-w-[130px] sm:flex-initial">
-              <label className="block xl:hidden text-[9px] font-extrabold text-[#7A8597] uppercase mb-1">Utility Type</label>
+            <div className="relative flex-1 min-w-[130px] sm:flex-initial lg:w-[130px]">
+              <label className="block lg:hidden text-[9px] font-extrabold text-[#7A8597] uppercase mb-1">Utility Type</label>
               <select
                 value={selectedUtility}
                 onChange={(e) => setSelectedUtility(e.target.value)}
@@ -485,11 +485,11 @@ export default function CarbonTrendChartSection({
             </div>
 
             {/* Moving Average Toggle */}
-            <div className="flex flex-col xl:block">
-              <label className="block xl:hidden text-[9px] font-extrabold text-[#7A8597] uppercase mb-1">Trend Assistance</label>
+            <div className="flex flex-col lg:block">
+              <label className="block lg:hidden text-[9px] font-extrabold text-[#7A8597] uppercase mb-1">Trend Assistance</label>
               <button
                 onClick={() => setShowMovingAvg(!showMovingAvg)}
-                className={`w-full xl:w-auto px-2.5 py-1.5 text-xs font-bold rounded-xl border transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
+                className={`w-full lg:w-auto px-2.5 py-1.5 text-xs font-bold rounded-xl border transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
                   showMovingAvg
                     ? "bg-[#2F5241]/10 text-[#2F5241] border-[#2F5241]/30 font-extrabold"
                     : "bg-[#EEEDDF] text-[#7A8597] border-[#DDDDD0]"
