@@ -372,46 +372,48 @@ export default function CarbonTrendChartSection({
     <div className="dash-card bg-[#F7F6EE] border border-[#DDDDD0] rounded-[24px] p-6 shadow-[0_2px_12px_rgba(21,42,56,0.06)] relative overflow-hidden h-full flex flex-col justify-between">
       
       {/* ── CARD HEADER & ANALYTICS SCOPE CONTROLS ───────────────────────── */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-5 border-b border-[#DDDDD0] pb-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-[#2F5241] text-[#E4E5DB] flex items-center justify-center shadow-xs">
+      <div className="space-y-3.5 mb-5 border-b border-[#DDDDD0] pb-4">
+        {/* Top Header Row: Title + Time Range Switcher */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8.5 h-8.5 rounded-xl bg-[#2F5241] text-[#E4E5DB] flex items-center justify-center shadow-xs shrink-0">
               <TrendingUp className="w-4 h-4" strokeWidth={2.5} />
             </div>
-            <div>
-              <h2 className="text-[14px] font-extrabold text-[#152A38] tracking-wide uppercase">
+            <div className="min-w-0">
+              <h2 className="text-xs sm:text-sm font-extrabold text-[#152A38] tracking-wide uppercase truncate">
                 Carbon Emissions Analytics & Trend Model
               </h2>
-              <p className="text-xs text-[#7A8597] font-medium mt-0.5">
+              <p className="text-[11px] text-[#7A8597] font-semibold mt-0.5 truncate">
                 Scalable aggregated timeline with rolling average & facility scope filters
               </p>
             </div>
           </div>
+
+          {/* Time Range Selector */}
+          <div className="flex items-center bg-[#EEEDDF] p-1 rounded-xl border border-[#DDDDD0] shrink-0 self-start sm:self-auto">
+            <span className="text-[10px] font-extrabold text-[#7A8597] uppercase px-2 hidden md:inline">Range:</span>
+            {["6M", "1Y", "ALL"].map((range) => (
+              <button
+                key={range}
+                onClick={() => setTimeRange(range)}
+                className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                  timeRange === range
+                    ? "bg-[#2F5241] text-[#E4E5DB] shadow-xs"
+                    : "text-[#7A8597] hover:text-[#152A38]"
+                }`}
+              >
+                {range}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Filters Controls Toolbar */}
-        <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-2.5 w-full lg:w-auto">
-          {/* Main Controls Row (Always visible and scrollable without browser scrollbar tracks) */}
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-0.5 w-full lg:w-auto">
-            {/* Time Range Selector */}
-            <div className="flex items-center bg-[#EEEDDF] p-1 rounded-xl border border-[#DDDDD0] shrink-0">
-              {["6M", "1Y", "ALL"].map((range) => (
-                <button
-                  key={range}
-                  onClick={() => setTimeRange(range)}
-                  className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                    timeRange === range
-                      ? "bg-[#2F5241] text-[#E4E5DB] shadow-xs"
-                      : "text-[#7A8597] hover:text-[#152A38]"
-                  }`}
-                >
-                  {range}
-                </button>
-              ))}
-            </div>
-
-            {/* Granularity Selector */}
-            <div className="flex items-center bg-[#EEEDDF] p-1 rounded-xl border border-[#DDDDD0] shrink-0">
+        {/* Dedicated Control Bar: Granularity, Sites, Utilities & Rolling Avg */}
+        <div className="bg-[#EEEDDF]/60 p-2 sm:p-2.5 rounded-2xl border border-[#DDDDD0] flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5">
+          {/* Left: Granularity Selector */}
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-0.5">
+            <span className="text-[10px] font-extrabold text-[#7A8597] uppercase px-1 hidden lg:inline">Granularity:</span>
+            <div className="flex items-center bg-[#EEEDDF] p-0.5 rounded-xl border border-[#DDDDD0] shrink-0">
               {[
                 { id: "AUTO", label: `Auto` },
                 { id: "MONTHLY", label: "Monthly" },
@@ -431,33 +433,16 @@ export default function CarbonTrendChartSection({
                 </button>
               ))}
             </div>
-
-            {/* Mobile Filter Toggle */}
-            <button
-              onClick={() => setShowMobileFilters(!showMobileFilters)}
-              className="lg:hidden px-3 py-1.5 text-xs font-extrabold rounded-xl border bg-[#EEEDDF] text-[#152A38] border-[#DDDDD0] flex items-center gap-1.5 cursor-pointer shrink-0 hover:bg-[#E4E3D6] transition-colors"
-            >
-              <Filter className="w-3.5 h-3.5 text-[#2F5241]" />
-              <span>Filters</span>
-              {(selectedFacility !== "ALL" || selectedUtility !== "ALL" || !showMovingAvg) && (
-                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-              )}
-            </button>
           </div>
 
-          {/* Collapsible Selectors (Visible on desktop, toggled on mobile) */}
-          <div className={`lg:flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto ${
-            showMobileFilters 
-              ? "flex animate-slideDown bg-[#EEEDDF]/50 p-3 rounded-2xl border border-[#DDDDD0] mt-1.5 lg:mt-0 lg:p-0 lg:bg-transparent lg:border-0" 
-              : "hidden lg:flex"
-          }`}>
+          {/* Right: Dropdowns + Rolling Avg */}
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
             {/* Facility Scope Filter Dropdown */}
-            <div className="relative flex-1 min-w-[140px] sm:flex-initial lg:w-[170px]">
-              <label className="block lg:hidden text-[9px] font-extrabold text-[#7A8597] uppercase mb-1">Site / Facility</label>
+            <div className="relative flex-1 min-w-[150px] sm:flex-initial">
               <select
                 value={selectedFacility}
                 onChange={(e) => setSelectedFacility(e.target.value)}
-                className="w-full bg-[#EEEDDF] border border-[#DDDDD0] text-[#152A38] text-xs font-bold rounded-xl px-3 py-1.5 focus:outline-none focus:border-[#2F5241] cursor-pointer truncate"
+                className="w-full bg-[#EEEDDF] border border-[#DDDDD0] text-[#152A38] text-xs font-bold rounded-xl px-3 py-1.5 focus:outline-none focus:border-[#2F5241] cursor-pointer truncate hover:border-[#2F5241]/40 transition-colors"
               >
                 <option value="ALL">🏢 All Monitored Sites</option>
                 {allFacilities.map((f) => (
@@ -469,12 +454,11 @@ export default function CarbonTrendChartSection({
             </div>
 
             {/* Utility Filter Dropdown */}
-            <div className="relative flex-1 min-w-[130px] sm:flex-initial lg:w-[130px]">
-              <label className="block lg:hidden text-[9px] font-extrabold text-[#7A8597] uppercase mb-1">Utility Type</label>
+            <div className="relative flex-1 min-w-[135px] sm:flex-initial">
               <select
                 value={selectedUtility}
                 onChange={(e) => setSelectedUtility(e.target.value)}
-                className="w-full bg-[#EEEDDF] border border-[#DDDDD0] text-[#152A38] text-xs font-bold rounded-xl px-3 py-1.5 focus:outline-none focus:border-[#2F5241] cursor-pointer truncate"
+                className="w-full bg-[#EEEDDF] border border-[#DDDDD0] text-[#152A38] text-xs font-bold rounded-xl px-3 py-1.5 focus:outline-none focus:border-[#2F5241] cursor-pointer truncate hover:border-[#2F5241]/40 transition-colors"
               >
                 <option value="ALL">⚡ All Utilities</option>
                 <option value="ELECTRICITY">Electricity</option>
@@ -485,21 +469,18 @@ export default function CarbonTrendChartSection({
             </div>
 
             {/* Moving Average Toggle */}
-            <div className="flex flex-col lg:block">
-              <label className="block lg:hidden text-[9px] font-extrabold text-[#7A8597] uppercase mb-1">Trend Assistance</label>
-              <button
-                onClick={() => setShowMovingAvg(!showMovingAvg)}
-                className={`w-full lg:w-auto px-2.5 py-1.5 text-xs font-bold rounded-xl border transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
-                  showMovingAvg
-                    ? "bg-[#2F5241]/10 text-[#2F5241] border-[#2F5241]/30 font-extrabold"
-                    : "bg-[#EEEDDF] text-[#7A8597] border-[#DDDDD0]"
-                }`}
-                title="Toggle 3-Period Rolling Average Overlay Line"
-              >
-                <Layers className="w-3.5 h-3.5" />
-                <span>Rolling Avg</span>
-              </button>
-            </div>
+            <button
+              onClick={() => setShowMovingAvg(!showMovingAvg)}
+              className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 ${
+                showMovingAvg
+                  ? "bg-[#2F5241]/10 text-[#2F5241] border-[#2F5241]/30 font-extrabold"
+                  : "bg-[#EEEDDF] text-[#7A8597] border-[#DDDDD0]"
+              }`}
+              title="Toggle 3-Period Rolling Average Overlay Line"
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>Rolling Avg</span>
+            </button>
           </div>
         </div>
       </div>
@@ -546,10 +527,10 @@ export default function CarbonTrendChartSection({
       </div>
 
       {/* ── SVG AGGREGATED INTERACTIVE GRAPH CANVAS ───────────────────────── */}
-      <div className="relative rounded-2xl overflow-hidden bg-[#EEEDDF]/50 p-2 border border-[#DDDDD0]/60 w-full overflow-x-auto scrollbar-thin">
+      <div className="relative rounded-2xl overflow-hidden bg-[#EEEDDF]/50 p-2 border border-[#DDDDD0]/60 w-full overflow-x-auto sm:overflow-x-visible scrollbar-none">
         <svg
           viewBox={`0 0 ${chartData.width} ${chartData.height}`}
-          className="min-w-[560px] sm:min-w-full h-auto"
+          className="w-full h-auto min-w-[500px] sm:min-w-full"
           style={{ display: "block" }}
         >
           <defs>
