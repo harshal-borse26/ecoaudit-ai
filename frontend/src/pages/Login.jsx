@@ -89,7 +89,7 @@ const Login = () => {
               href="#forgot"
               onClick={(e) => {
                 e.preventDefault();
-                alert("Password reset functionality is managed by your corporate IT administrator.");
+                alert("Password reset functionality is managed by your Organization Admin.");
               }}
               className="text-[11px] font-medium text-[#64748B] hover:text-[#2E7D32] transition-colors text-decoration-none"
             >

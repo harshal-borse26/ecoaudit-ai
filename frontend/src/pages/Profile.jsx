@@ -169,9 +169,9 @@ const Profile = () => {
             <div className="flex items-center gap-2 mt-1">
               <span className="px-2.5 py-0.5 rounded-full bg-[#E7F3E8] text-[#2E7D32] text-xs font-bold flex items-center gap-1">
                 <ShieldCheck className="w-3.5 h-3.5" />
-                {profileData?.role || "ADMIN"}
+                {profileData?.role || "ORG_ADMIN"}
               </span>
-              <span className="text-xs text-[#64748B]">• Corporate Administrator</span>
+              <span className="text-xs text-[#64748B]">• Organization Admin</span>
             </div>
           </div>
         </div>

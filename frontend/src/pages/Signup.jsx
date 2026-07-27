@@ -237,14 +237,14 @@ const Signup = () => {
           </div>
         </div>
 
-        {/* SECTION 2: ADMINISTRATOR ACCOUNT */}
+        {/* SECTION 2: ORGANIZATION ADMIN ACCOUNT */}
         <div className="pt-1">
           <div className="flex items-center gap-2 mb-2.5">
             <span className="w-5 h-5 rounded-full bg-[#E7F3E8] text-[#2E7D32] text-[11px] font-bold flex items-center justify-center">
               2
             </span>
             <h3 className="text-xs font-bold text-[#1E293B] uppercase tracking-wider">
-              Primary Administrator Account
+              Primary Organization Admin Account
             </h3>
             <div className="h-px bg-[#E2E8F0] flex-1 ml-1" />
           </div>

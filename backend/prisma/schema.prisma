@@ -28,7 +28,7 @@ model User {
   fullName  String
   email     String   @unique
   password  String
-  role      String   @default("ADMIN")
+  role      Role     @default(ORG_ADMIN)
 
   companyId String
   company   Company  @relation(fields: [companyId], references: [id])
@@ -106,4 +106,9 @@ enum BillStatus {
   PROCESSING
   COMPLETED
   FAILED
+}
+
+enum Role {
+  ORG_ADMIN
+  PLATFORM_ADMIN
 }

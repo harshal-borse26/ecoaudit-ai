@@ -74,7 +74,7 @@ export const registerCompany = async (data) => {
         fullName,
         email,
         password: hashedPassword,
-        role: "ADMIN",
+        role: "ORG_ADMIN",
         companyId: company.id,
       },
     });

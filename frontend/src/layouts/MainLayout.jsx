@@ -30,7 +30,11 @@ const MainLayout = () => {
   const user = storedUser ? JSON.parse(storedUser) : null;
 
   const userFullName = user ? user.fullName : "Harshal Borse";
-  const userRole = user?.role || "MNC Compliance Lead";
+  const displayRole = user?.role === "ORG_ADMIN"
+    ? "Organization Admin"
+    : user?.role === "PLATFORM_ADMIN"
+    ? "Platform Admin"
+    : (user?.role || "Organization Admin");
   const userInitials = userFullName
     .split(" ")
     .map((n) => n[0])
@@ -156,7 +160,7 @@ const MainLayout = () => {
               {!collapsed && (
                 <div className="overflow-hidden">
                   <div className="text-xs font-extrabold text-[#E4E5DB] truncate">{userFullName}</div>
-                  <div className="text-[10px] text-[#D6CFB9]/70 truncate">{userRole}</div>
+                  <div className="text-[10px] text-[#D6CFB9]/70 truncate">{displayRole}</div>
                 </div>
               )}
             </div>
@@ -259,7 +263,7 @@ const MainLayout = () => {
                   </div>
                   <div className="hidden sm:block text-left">
                     <span className="text-xs font-extrabold text-[#1E293B] block leading-none">{userFullName}</span>
-                    <span className="text-[10px] font-bold text-[#2E7D32] mt-0.5 block">{userRole}</span>
+                    <span className="text-[10px] font-bold text-[#2E7D32] mt-0.5 block">{displayRole}</span>
                   </div>
                   <ChevronDown className="w-3.5 h-3.5 text-[#94A3B8]" />
                 </button>
