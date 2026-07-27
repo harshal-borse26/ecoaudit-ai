@@ -570,19 +570,19 @@ const Bills = () => {
           <Search className="w-3.5 h-3.5 absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
           <input
             type="text"
-            placeholder="Search by consumer name, meter #, facility, or billing month..."
+            placeholder="Search by consumer, meter #, facility, or month..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-10 pl-10 pr-4 bg-[#EEEDDF] border border-[#D4D4C4] rounded-full text-xs font-semibold text-[#152A38] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#2F5241] focus:ring-1 focus:ring-[#2F5241]/20 transition-all"
+            className="w-full h-10 pl-10 pr-4 bg-[#EEEDDF] border border-[#D4D4C4] rounded-full text-xs font-semibold text-[#152A38] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#2F5241] focus:ring-1 focus:ring-[#2F5241]/20 transition-all truncate"
           />
         </div>
 
-        {/* Filter Dropdowns */}
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Filter Dropdowns Responsive Grid/Flex */}
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2">
           <select
             value={facilityFilter}
             onChange={(e) => setFacilityFilter(e.target.value)}
-            className="h-9 px-3 bg-[#EEEDDF] border border-[#D4D4C4] rounded-xl text-xs font-semibold text-[#152A38] focus:outline-none focus:border-[#2F5241] cursor-pointer"
+            className="w-full sm:w-auto h-9 px-3 bg-[#EEEDDF] border border-[#D4D4C4] rounded-xl text-xs font-semibold text-[#152A38] focus:outline-none focus:border-[#2F5241] cursor-pointer truncate"
           >
             <option value="ALL">All Facilities</option>
             {facilities.map((f) => (
@@ -593,7 +593,7 @@ const Bills = () => {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-9 px-3 bg-[#EEEDDF] border border-[#D4D4C4] rounded-xl text-xs font-semibold text-[#152A38] focus:outline-none focus:border-[#2F5241] cursor-pointer"
+            className="w-full sm:w-auto h-9 px-3 bg-[#EEEDDF] border border-[#D4D4C4] rounded-xl text-xs font-semibold text-[#152A38] focus:outline-none focus:border-[#2F5241] cursor-pointer truncate"
           >
             <option value="ALL">All Statuses</option>
             <option value="COMPLETED">Completed</option>
@@ -605,7 +605,7 @@ const Bills = () => {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="h-9 px-3 bg-[#EEEDDF] border border-[#D4D4C4] rounded-xl text-xs font-semibold text-[#152A38] focus:outline-none focus:border-[#2F5241] cursor-pointer"
+            className="w-full sm:w-auto h-9 px-3 bg-[#EEEDDF] border border-[#D4D4C4] rounded-xl text-xs font-semibold text-[#152A38] focus:outline-none focus:border-[#2F5241] cursor-pointer truncate"
           >
             <option value="ALL">All Utility Types</option>
             {BILL_TYPES.map((t) => (
@@ -616,7 +616,7 @@ const Bills = () => {
           <select
             value={monthFilter}
             onChange={(e) => setMonthFilter(e.target.value)}
-            className="h-9 px-3 bg-[#EEEDDF] border border-[#D4D4C4] rounded-xl text-xs font-semibold text-[#152A38] focus:outline-none focus:border-[#2F5241] cursor-pointer"
+            className="w-full sm:w-auto h-9 px-3 bg-[#EEEDDF] border border-[#D4D4C4] rounded-xl text-xs font-semibold text-[#152A38] focus:outline-none focus:border-[#2F5241] cursor-pointer truncate"
           >
             <option value="ALL">All Months</option>
             {MONTHS.map((m) => (
@@ -627,7 +627,7 @@ const Bills = () => {
           <select
             value={yearFilter}
             onChange={(e) => setYearFilter(e.target.value)}
-            className="h-9 px-3 bg-[#EEEDDF] border border-[#D4D4C4] rounded-xl text-xs font-semibold text-[#152A38] focus:outline-none focus:border-[#2F5241] cursor-pointer"
+            className="w-full sm:w-auto h-9 px-3 bg-[#EEEDDF] border border-[#D4D4C4] rounded-xl text-xs font-semibold text-[#152A38] focus:outline-none focus:border-[#2F5241] cursor-pointer truncate"
           >
             <option value="ALL">All Years</option>
             {yearOptions.map((y) => (
@@ -637,7 +637,7 @@ const Bills = () => {
 
           <button
             onClick={resetFilters}
-            className="h-9 px-4 bg-[#F7F6EE] border border-[#D4D4C4] text-[#7A8597] hover:text-[#152A38] hover:bg-[#EEEDDF] text-xs font-bold rounded-xl transition-all cursor-pointer active:scale-95"
+            className="w-full sm:w-auto h-9 px-4 bg-[#F7F6EE] border border-[#D4D4C4] text-[#7A8597] hover:text-[#152A38] hover:bg-[#EEEDDF] text-xs font-bold rounded-xl transition-all cursor-pointer active:scale-95"
           >
             Reset
           </button>
@@ -701,7 +701,7 @@ const Bills = () => {
                 className="bg-[#F7F6EE] border border-[#D4D4C4] rounded-[24px] p-5 sm:p-6 shadow-xs hover:border-[#2F5241]/40 hover:shadow-sm transition-all duration-200 space-y-4"
               >
                 {/* Header Row */}
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                <div className="flex items-start justify-between gap-3 flex-wrap sm:flex-nowrap">
                   <div className="flex items-start gap-3.5 min-w-0 flex-1">
                     <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border ${
                       bill.status === "COMPLETED" ? "bg-[#EAF2ED] text-[#2F5241] border-[#2F5241]/15" :
@@ -716,57 +716,57 @@ const Bills = () => {
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2.5 flex-wrap mb-0.5">
+                      <div className="flex items-center gap-2 flex-wrap mb-0.5">
                         <h3 className="text-sm font-extrabold text-[#152A38] truncate">
                           {bill.facility?.name || "Target Facility"}
                         </h3>
                         {renderUtilityChips(bill)}
                       </div>
-                      <p className="text-[11px] font-semibold text-[#7A8597]">
+                      <p className="text-[11px] font-semibold text-[#7A8597] truncate">
                         <span className="text-[#152A38] font-bold">{bill.billMonth || ""} {bill.billYear || ""}</span>
-                        <span className="mx-1.5 text-[#D4D4C4]">•</span>
+                        <span className="mx-1 text-[#D4D4C4]">•</span>
                         Uploaded {formatDate(bill.createdAt)}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0 self-end sm:self-start">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-extrabold uppercase ${getStatusBadgeClass(bill.status)}`}>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${getStatusBadgeClass(bill.status)}`}>
                       {bill.status}
                     </span>
                   </div>
                 </div>
 
                 {/* Metrics Pill Grid */}
-                <div className="bg-[#EEEDDF] border border-[#DDDDD0] rounded-2xl p-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                <div className="bg-[#EEEDDF] border border-[#DDDDD0] rounded-2xl p-3 sm:p-4 grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center">
                   <div>
-                    <span className="text-[9.5px] font-extrabold text-[#7A8597] uppercase tracking-wider block">CARBON EMISSION</span>
-                    <div className="text-sm font-extrabold text-[#EF4444] mt-0.5">
+                    <span className="text-[9px] sm:text-[9.5px] font-extrabold text-[#7A8597] uppercase tracking-wider block whitespace-nowrap">CARBON EMISSION</span>
+                    <div className="text-xs sm:text-sm font-extrabold text-[#EF4444] mt-0.5 whitespace-nowrap">
                       {bill.status === "COMPLETED" ? `${totalCarbon.toFixed(2)} kg` : <span className="text-[#94A3B8] text-xs">Pending</span>}
                     </div>
                   </div>
                   <div>
-                    <span className="text-[9.5px] font-extrabold text-[#7A8597] uppercase tracking-wider block">TOTAL AMOUNT</span>
-                    <div className="text-sm font-extrabold text-[#152A38] mt-0.5">
+                    <span className="text-[9px] sm:text-[9.5px] font-extrabold text-[#7A8597] uppercase tracking-wider block whitespace-nowrap">TOTAL AMOUNT</span>
+                    <div className="text-xs sm:text-sm font-extrabold text-[#152A38] mt-0.5 whitespace-nowrap">
                       {bill.totalAmount != null ? formatCurrency(bill.totalAmount) : <span className="text-[#94A3B8]">-</span>}
                     </div>
                   </div>
                   <div>
-                    <span className="text-[9.5px] font-extrabold text-[#7A8597] uppercase tracking-wider block">CONSUMER / METER</span>
+                    <span className="text-[9px] sm:text-[9.5px] font-extrabold text-[#7A8597] uppercase tracking-wider block whitespace-nowrap">CONSUMER / METER</span>
                     <div className="text-xs font-extrabold text-[#152A38] mt-0.5 truncate">
                       {bill.consumerName || bill.meterNumber || <span className="text-[#94A3B8]">-</span>}
                     </div>
                   </div>
                   <div>
-                    <span className="text-[9.5px] font-extrabold text-[#7A8597] uppercase tracking-wider block">AI CONFIDENCE</span>
-                    <div className="text-sm font-extrabold text-[#2F5241] mt-0.5">
+                    <span className="text-[9px] sm:text-[9.5px] font-extrabold text-[#7A8597] uppercase tracking-wider block whitespace-nowrap">AI CONFIDENCE</span>
+                    <div className="text-xs sm:text-sm font-extrabold text-[#2F5241] mt-0.5 whitespace-nowrap">
                       {bill.status === "COMPLETED" ? "96.5%" : <span className="text-[#94A3B8] text-xs">N/A</span>}
                     </div>
                   </div>
                 </div>
 
                 {/* AI Summary Banner & Actions */}
-                <div className={`rounded-2xl p-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 ${
+                <div className={`rounded-2xl p-3.5 sm:p-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 ${
                   bill.status === "FAILED"
                     ? "bg-red-50 border border-red-200/60"
                     : bill.status === "PROCESSING"
@@ -794,12 +794,12 @@ const Bills = () => {
                   </div>
 
                   {/* ACTION BUTTONS */}
-                  <div className="flex items-center gap-2 flex-wrap shrink-0 self-end lg:self-auto">
+                  <div className="flex items-center gap-2 flex-wrap shrink-0 w-full lg:w-auto justify-end sm:justify-start pt-2 lg:pt-0 border-t lg:border-t-0 border-[#2F5241]/10">
                     {(bill.status === "PENDING" || bill.status === "FAILED") && (
                       <button
                         onClick={() => handleProcessBill(bill.id)}
                         disabled={isProcessing}
-                        className="px-3.5 py-1.5 bg-[#2F5241] text-[#E4E5DB] font-extrabold text-[11px] rounded-xl shadow-xs hover:bg-[#234035] cursor-pointer flex items-center gap-1.5 transition-all active:scale-95 disabled:opacity-60"
+                        className="flex-1 sm:flex-initial px-3.5 py-1.5 bg-[#2F5241] text-[#E4E5DB] font-extrabold text-[11px] rounded-xl shadow-xs hover:bg-[#234035] cursor-pointer flex items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-60 whitespace-nowrap"
                       >
                         <Zap className="w-3 h-3" />
                         <span>{bill.status === "FAILED" ? "Reprocess AI" : "Process AI"}</span>
@@ -808,7 +808,7 @@ const Bills = () => {
 
                     <button
                       onClick={() => openEditModal(bill)}
-                      className="px-3 py-1.5 bg-[#F7F6EE] border border-[#D4D4C4] text-[#152A38] hover:bg-[#EEEDDF] font-extrabold text-[11px] rounded-xl transition-all cursor-pointer flex items-center gap-1.5 active:scale-95"
+                      className="flex-1 sm:flex-initial px-3 py-1.5 bg-[#F7F6EE] border border-[#D4D4C4] text-[#152A38] hover:bg-[#EEEDDF] font-extrabold text-[11px] rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 whitespace-nowrap"
                       title="Edit bill metadata or replace document file"
                     >
                       <Edit3 className="w-3 h-3 text-[#7A8597]" />
@@ -817,7 +817,7 @@ const Bills = () => {
 
                     <button
                       onClick={() => handleDeleteBill(bill.id)}
-                      className="px-3 py-1.5 bg-[#F7F6EE] border border-red-200 text-red-500 hover:bg-red-50 font-extrabold text-[11px] rounded-xl transition-all cursor-pointer flex items-center gap-1.5 active:scale-95"
+                      className="px-3 py-1.5 bg-[#F7F6EE] border border-red-200 text-red-500 hover:bg-red-50 font-extrabold text-[11px] rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 whitespace-nowrap"
                       title="Delete bill record"
                     >
                       <Trash2 className="w-3 h-3" />
@@ -825,7 +825,7 @@ const Bills = () => {
 
                     <button
                       onClick={() => openDrawer(bill.id)}
-                      className="px-3.5 py-1.5 bg-[#F7F6EE] border border-[#2F5241]/30 text-[#2F5241] font-extrabold text-[11px] rounded-xl hover:bg-[#EAF2ED] transition-all cursor-pointer active:scale-95"
+                      className="flex-1 sm:flex-initial px-3.5 py-1.5 bg-[#F7F6EE] border border-[#2F5241]/30 text-[#2F5241] font-extrabold text-[11px] rounded-xl hover:bg-[#EAF2ED] transition-all cursor-pointer text-center active:scale-95 whitespace-nowrap"
                     >
                       View Analysis →
                     </button>
@@ -1105,7 +1105,7 @@ const Bills = () => {
           <div className="relative z-10 w-full sm:w-[520px] md:w-[600px] lg:w-[660px] bg-[#F7F6EE] h-full shadow-2xl flex flex-col overflow-hidden border-l border-[#D4D4C4] transition-all duration-300">
 
             {/* Drawer Header */}
-            <div className="p-4 sm:p-5 border-b border-[#D4D4C4] flex items-center justify-between bg-[#EEEDDF] shrink-0 gap-3">
+            <div className="p-3.5 sm:p-5 border-b border-[#D4D4C4] flex items-center justify-between bg-[#EEEDDF] shrink-0 gap-2.5">
               <div className="flex items-center gap-3 min-w-0 flex-1">
                 <div className="w-10 h-10 rounded-2xl bg-[#EAF2ED] text-[#2F5241] flex items-center justify-center shrink-0 border border-[#2F5241]/15">
                   <FileText className="w-5 h-5" />
@@ -1121,13 +1121,13 @@ const Bills = () => {
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 {drawerBill && (
-                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase hidden sm:inline-block ${getStatusBadgeClass(drawerBill.status)}`}>
+                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase shrink-0 ${getStatusBadgeClass(drawerBill.status)}`}>
                     {drawerBill.status}
                   </span>
                 )}
                 <button
                   onClick={closeDrawer}
-                  className="p-1.5 text-[#94A3B8] hover:text-[#152A38] hover:bg-[#EEEDDF] rounded-xl border border-[#D4D4C4] transition-colors cursor-pointer"
+                  className="p-1.5 text-[#94A3B8] hover:text-[#152A38] hover:bg-[#EEEDDF] rounded-xl border border-[#D4D4C4] transition-colors cursor-pointer shrink-0"
                   title="Close"
                 >
                   <X className="w-4 h-4" />
@@ -1255,29 +1255,29 @@ const Bills = () => {
                           No specific utility breakdown items recorded.
                         </div>
                       ) : (
-                        <div className="bg-[#EEEDDF] border border-[#DDDDD0] rounded-2xl overflow-hidden">
-                          <table className="w-full text-left text-xs">
-                            <thead className="bg-[#E4E3D6] border-b border-[#D4D4C4] font-extrabold text-[#7A8597]">
+                        <div className="bg-[#EEEDDF] border border-[#DDDDD0] rounded-2xl overflow-x-auto scrollbar-thin">
+                          <table className="w-full text-left text-xs min-w-[480px]">
+                            <thead className="bg-[#E4E3D6] border-b border-[#D4D4C4] font-extrabold text-[#7A8597] whitespace-nowrap">
                               <tr>
                                 <th className="p-3">Utility Type</th>
                                 <th className="p-3">Usage</th>
                                 <th className="p-3">Unit</th>
                                 <th className="p-3">Amount</th>
-                                <th className="p-3 text-[#EF4444]">Carbon (kg)</th>
+                                <th className="p-3 text-[#EF4444]">Carbon Output (kg)</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-[#D4D4C4] font-semibold text-[#152A38]">
                               {drawerBill.utilities.map((u, idx) => (
                                 <tr key={u.id || idx} className="hover:bg-[#E4E3D6]/50 transition-colors">
-                                  <td className="p-3 font-bold">
-                                    <span className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold ${getUtilityChipClass(u.utilityType)}`}>
+                                  <td className="p-3 font-bold whitespace-nowrap">
+                                    <span className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold whitespace-nowrap ${getUtilityChipClass(u.utilityType)}`}>
                                       {u.utilityType}
                                     </span>
                                   </td>
-                                  <td className="p-3">{u.usage}</td>
-                                  <td className="p-3">{u.unit}</td>
-                                  <td className="p-3 font-extrabold">{formatCurrency(u.amount)}</td>
-                                  <td className="p-3 text-[#EF4444] font-extrabold">{u.carbonEmission?.toFixed(2)}</td>
+                                  <td className="p-3 whitespace-nowrap">{u.usage}</td>
+                                  <td className="p-3 whitespace-nowrap">{u.unit}</td>
+                                  <td className="p-3 font-extrabold whitespace-nowrap">{formatCurrency(u.amount)}</td>
+                                  <td className="p-3 text-[#EF4444] font-extrabold whitespace-nowrap">{u.carbonEmission?.toFixed(2)} kg CO2e</td>
                                 </tr>
                               ))}
                             </tbody>
