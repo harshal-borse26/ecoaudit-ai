@@ -59,12 +59,9 @@ const Landing = () => {
 
         {/* 11. Enterprise Knowledge Base FAQ Accordion */}
         <FAQSection />
-
-        {/* 12. Call To Action Conversion Banner */}
-        <CTASection />
       </main>
 
-      {/* Enterprise Footer */}
+      {/* Enterprise Unified 5-Layer Footer */}
       <LandingFooter />
 
       {/* Back to Top Floating Action Button */}
