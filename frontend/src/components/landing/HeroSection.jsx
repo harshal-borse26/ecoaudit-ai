@@ -33,7 +33,7 @@ const HeroSection = () => {
   return (
     <section 
       onMouseMove={handleMouseMove}
-      className="relative pt-28 pb-16 lg:pt-36 lg:pb-28 overflow-hidden bg-[#E4E5DB]/40"
+      className="relative pt-32 sm:pt-36 lg:pt-40 pb-16 lg:pb-28 overflow-hidden bg-[#E4E5DB]/40"
     >
       {/* AMBIENT SOFT BACKGROUND GLOWS */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-[#2F5241]/10 rounded-full blur-[140px] pointer-events-none -z-10" />

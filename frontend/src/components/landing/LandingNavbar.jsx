@@ -12,8 +12,7 @@ import {
   Cpu, 
   FileText, 
   HelpCircle,
-  Code,
-  Sparkles
+  Code
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 
@@ -33,6 +32,18 @@ const LandingNavbar = () => {
     { id: "technology", label: "Tech Stack", href: "#technology", icon: Code },
     { id: "faq", label: "FAQ", href: "#faq", icon: HelpCircle },
   ];
+
+  // Lock background scroll when mobile menu is active
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileMenuOpen]);
 
   // Scroll tracking for morph animation & active section detection
   useEffect(() => {
@@ -112,11 +123,11 @@ const LandingNavbar = () => {
         </nav>
 
         {/* ── ZONE 3: UTILITY & PRIMARY ENTERPRISE CTA (RIGHT) ───────────── */}
-        <div className="hidden lg:flex items-center gap-4">
+        <div className="hidden lg:flex items-center gap-4 sm:gap-5">
           {!token && (
             <Link
               to="/login"
-              className="px-3.5 py-2 text-sm font-extrabold text-[#152A38] hover:text-[#2E7D32] transition-colors text-decoration-none font-heading"
+              className="px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold text-[#152A38] hover:text-[#2E7D32] hover:bg-[#EEEDDF] transition-all duration-200 text-decoration-none font-heading border border-transparent hover:border-[#DDDDD0]"
             >
               Sign In
             </Link>
@@ -126,7 +137,7 @@ const LandingNavbar = () => {
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             onClick={() => navigate(token ? "/dashboard" : "/signup")}
-            className="px-5 py-2.5 rounded-2xl bg-[#152A38] hover:bg-[#2F5241] text-[#E4E5DB] hover:text-white text-xs sm:text-sm font-extrabold shadow-md transition-all duration-200 border border-[#2F5241]/40 flex items-center gap-2.5 cursor-pointer group"
+            className="px-5 py-2.5 rounded-2xl bg-[#152A38] hover:bg-[#2F5241] text-[#E4E5DB] hover:text-white text-xs sm:text-sm font-extrabold shadow-md hover:shadow-lg transition-all duration-200 border border-[#2F5241]/40 flex items-center gap-2.5 cursor-pointer group"
           >
             <LayoutDashboard className="w-4 h-4 text-emerald-400 group-hover:rotate-12 transition-transform" />
             <span className="font-heading">{token ? "Launch Dashboard" : "Launch Platform"}</span>
@@ -144,18 +155,18 @@ const LandingNavbar = () => {
         </button>
       </div>
 
-      {/* ── FULL-SCREEN ENTERPRISE MOBILE NAV SLIDE PANEL ────────────── */}
+      {/* ── FULL-SCREEN ENTERPRISE MOBILE NAV SLIDE PANEL (100dvh) ──────── */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="fixed inset-0 z-50 bg-[#152A38]/70 backdrop-blur-2xl flex flex-col justify-between p-6 sm:p-8 lg:hidden text-left"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="fixed inset-0 z-50 h-[100dvh] bg-[#152A38]/95 backdrop-blur-2xl flex flex-col justify-between p-6 sm:p-8 lg:hidden text-left overflow-hidden"
           >
             {/* TOP MOBILE NAV HEADER */}
-            <div className="flex items-center justify-between pb-6 border-b border-slate-700/80">
+            <div className="shrink-0 pb-5 border-b border-slate-700/80 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-[#2F5241] text-emerald-300 flex items-center justify-center shadow-xs">
                   <Leaf className="w-5 h-5 stroke-[2.5]" />
@@ -179,8 +190,8 @@ const LandingNavbar = () => {
               </motion.button>
             </div>
 
-            {/* STAGGERED MOBILE NAV ITEMS */}
-            <div className="py-6 space-y-2 overflow-y-auto">
+            {/* SCROLLABLE STAGGERED MOBILE NAV ITEMS */}
+            <div className="flex-1 overflow-y-auto pr-1 my-4 space-y-2 scrollbar-thin">
               {navItems.map((item, idx) => {
                 const Icon = item.icon;
                 const isActive = activeSection === item.id;
@@ -190,7 +201,7 @@ const LandingNavbar = () => {
                     href={item.href}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: idx * 0.05 }}
+                    transition={{ delay: idx * 0.04 }}
                     onClick={() => {
                       setActiveSection(item.id);
                       setMobileMenuOpen(false);
@@ -211,8 +222,8 @@ const LandingNavbar = () => {
               })}
             </div>
 
-            {/* MOBILE CTA FOOTER */}
-            <div className="pt-6 border-t border-slate-700/80 space-y-3">
+            {/* STICKY BOTTOM MOBILE CTA FOOTER */}
+            <div className="shrink-0 pt-4 border-t border-slate-700/80 space-y-3 bg-[#152A38]/90">
               {!token ? (
                 <>
                   <Link
