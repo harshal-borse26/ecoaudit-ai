@@ -389,14 +389,14 @@ export default function CarbonTrendChartSection({
         </div>
 
         {/* Filters Controls Toolbar */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto">
           {/* Time Range Selector */}
-          <div className="flex items-center bg-[#EEEDDF] p-1 rounded-xl border border-[#DDDDD0]">
+          <div className="flex items-center bg-[#EEEDDF] p-1 rounded-xl border border-[#DDDDD0] shrink-0">
             {["6M", "1Y", "ALL"].map((range) => (
               <button
                 key={range}
                 onClick={() => setTimeRange(range)}
-                className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
+                className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                   timeRange === range
                     ? "bg-[#2F5241] text-[#E4E5DB] shadow-xs"
                     : "text-[#7A8597] hover:text-[#152A38]"
@@ -408,7 +408,7 @@ export default function CarbonTrendChartSection({
           </div>
 
           {/* Granularity Selector */}
-          <div className="flex items-center bg-[#EEEDDF] p-1 rounded-xl border border-[#DDDDD0]">
+          <div className="flex items-center bg-[#EEEDDF] p-1 rounded-xl border border-[#DDDDD0] shrink-0 overflow-x-auto scrollbar-thin max-w-full">
             {[
               { id: "AUTO", label: `Auto (${effectiveGranularity.slice(0, 1)}${effectiveGranularity.slice(1).toLowerCase()})` },
               { id: "MONTHLY", label: "Monthly" },
@@ -418,7 +418,7 @@ export default function CarbonTrendChartSection({
               <button
                 key={g.id}
                 onClick={() => setManualGranularity(g.id)}
-                className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
+                className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
                   manualGranularity === g.id
                     ? "bg-[#152A38] text-white shadow-xs"
                     : "text-[#7A8597] hover:text-[#152A38]"
@@ -430,11 +430,11 @@ export default function CarbonTrendChartSection({
           </div>
 
           {/* Facility Scope Filter Dropdown */}
-          <div className="relative">
+          <div className="relative flex-1 min-w-[140px] sm:flex-initial">
             <select
               value={selectedFacility}
               onChange={(e) => setSelectedFacility(e.target.value)}
-              className="bg-[#EEEDDF] border border-[#DDDDD0] text-[#152A38] text-xs font-bold rounded-xl px-3 py-1.5 focus:outline-none focus:border-[#2F5241] cursor-pointer"
+              className="w-full bg-[#EEEDDF] border border-[#DDDDD0] text-[#152A38] text-xs font-bold rounded-xl px-3 py-1.5 focus:outline-none focus:border-[#2F5241] cursor-pointer truncate"
             >
               <option value="ALL">🏢 All Monitored Sites</option>
               {allFacilities.map((f) => (
@@ -446,11 +446,11 @@ export default function CarbonTrendChartSection({
           </div>
 
           {/* Utility Filter Dropdown */}
-          <div className="relative">
+          <div className="relative flex-1 min-w-[130px] sm:flex-initial">
             <select
               value={selectedUtility}
               onChange={(e) => setSelectedUtility(e.target.value)}
-              className="bg-[#EEEDDF] border border-[#DDDDD0] text-[#152A38] text-xs font-bold rounded-xl px-3 py-1.5 focus:outline-none focus:border-[#2F5241] cursor-pointer"
+              className="w-full bg-[#EEEDDF] border border-[#DDDDD0] text-[#152A38] text-xs font-bold rounded-xl px-3 py-1.5 focus:outline-none focus:border-[#2F5241] cursor-pointer truncate"
             >
               <option value="ALL">⚡ All Utilities</option>
               <option value="ELECTRICITY">Electricity</option>
@@ -463,7 +463,7 @@ export default function CarbonTrendChartSection({
           {/* Moving Average Toggle */}
           <button
             onClick={() => setShowMovingAvg(!showMovingAvg)}
-            className={`px-2.5 py-1.5 text-xs font-bold rounded-xl border transition-all flex items-center gap-1.5 ${
+            className={`px-2.5 py-1.5 text-xs font-bold rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
               showMovingAvg
                 ? "bg-[#2F5241]/10 text-[#2F5241] border-[#2F5241]/30 font-extrabold"
                 : "bg-[#EEEDDF] text-[#7A8597] border-[#DDDDD0]"
@@ -477,59 +477,51 @@ export default function CarbonTrendChartSection({
       </div>
 
       {/* ── KPI HIGHLIGHTS STRIP ────────────────────────────────────────── */}
-      <div className="bg-[#EEEDDF] rounded-2xl p-3.5 border border-[#DDDDD0] flex flex-wrap items-center justify-between gap-3 mb-4">
-        <div className="flex items-center gap-3 pr-4 border-r border-[#DDDDD0]/70">
-          <div>
-            <span className="text-[10px] font-bold text-[#7A8597] uppercase tracking-wider block">Scope Emission</span>
-            <span className="text-base font-extrabold text-[#152A38]">
-              {Math.round(chartData.currentVal).toLocaleString()} kg CO₂e
+      <div className="bg-[#EEEDDF] rounded-2xl p-3.5 border border-[#DDDDD0] grid grid-cols-2 lg:grid-cols-4 gap-3 text-left mb-4">
+        <div className="pr-2 border-r border-[#DDDDD0]/70">
+          <span className="text-[9.5px] font-extrabold text-[#7A8597] uppercase tracking-wider block">Scope Emission</span>
+          <span className="text-xs sm:text-base font-extrabold text-[#152A38] block mt-0.5 whitespace-nowrap">
+            {Math.round(chartData.currentVal).toLocaleString()} kg CO₂e
+          </span>
+        </div>
+
+        <div className="pr-2 lg:border-r border-[#DDDDD0]/70">
+          <span className="text-[9.5px] font-extrabold text-[#7A8597] uppercase tracking-wider block">Timeline Direction</span>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <span
+              className={`text-[10px] sm:text-xs font-extrabold px-2.5 py-0.5 rounded-full border whitespace-nowrap ${
+                chartData.isIncrease
+                  ? "bg-red-50 text-red-600 border-red-200"
+                  : "bg-emerald-50 text-emerald-700 border-emerald-200"
+              }`}
+            >
+              {chartData.isIncrease ? "▲" : "▼"} {chartData.pct.toFixed(1)}% vs prev
             </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 pr-4 border-r border-[#DDDDD0]/70">
-          <div>
-            <span className="text-[10px] font-bold text-[#7A8597] uppercase tracking-wider block">Timeline Direction</span>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <span
-                className={`text-xs font-extrabold px-2.5 py-0.5 rounded-full border ${
-                  chartData.isIncrease
-                    ? "bg-red-50 text-red-600 border-red-200"
-                    : "bg-emerald-50 text-emerald-700 border-emerald-200"
-                }`}
-              >
-                {chartData.isIncrease ? "▲" : "▼"} {chartData.pct.toFixed(1)}% vs prev
-              </span>
-            </div>
-          </div>
+        <div className="pr-2 border-r border-[#DDDDD0]/70 hidden sm:block">
+          <span className="text-[9.5px] font-extrabold text-[#7A8597] uppercase tracking-wider block">Timeline Peak</span>
+          <span className="text-xs font-extrabold text-[#B45309] block mt-0.5 truncate">
+            {Math.round(chartData.maxVal).toLocaleString()} kg ({chartData.peakPoint?.label})
+          </span>
         </div>
 
-        <div className="flex items-center gap-3 pr-4 border-r border-[#DDDDD0]/70 hidden sm:flex">
-          <div>
-            <span className="text-[10px] font-bold text-[#7A8597] uppercase tracking-wider block">Timeline Peak</span>
-            <span className="text-xs font-extrabold text-[#B45309]">
-              {Math.round(chartData.maxVal).toLocaleString()} kg ({chartData.peakPoint?.label})
-            </span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3 hidden sm:flex">
-          <div>
-            <span className="text-[10px] font-bold text-[#7A8597] uppercase tracking-wider block">
-              Granular Period Average
-            </span>
-            <span className="text-xs font-extrabold text-[#2F5241]">
-              {Math.round(chartData.avgVal).toLocaleString()} kg/period
-            </span>
-          </div>
+        <div className="hidden sm:block">
+          <span className="text-[9.5px] font-extrabold text-[#7A8597] uppercase tracking-wider block">
+            Granular Period Average
+          </span>
+          <span className="text-xs font-extrabold text-[#2F5241] block mt-0.5 whitespace-nowrap">
+            {Math.round(chartData.avgVal).toLocaleString()} kg/period
+          </span>
         </div>
       </div>
 
       {/* ── SVG AGGREGATED INTERACTIVE GRAPH CANVAS ───────────────────────── */}
-      <div className="relative rounded-2xl overflow-hidden bg-[#EEEDDF]/50 p-2 border border-[#DDDDD0]/60">
+      <div className="relative rounded-2xl overflow-hidden bg-[#EEEDDF]/50 p-2 border border-[#DDDDD0]/60 w-full overflow-x-auto scrollbar-thin">
         <svg
           viewBox={`0 0 ${chartData.width} ${chartData.height}`}
-          className="w-full h-auto"
+          className="min-w-[560px] sm:min-w-full h-auto"
           style={{ display: "block" }}
         >
           <defs>

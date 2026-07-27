@@ -120,20 +120,20 @@ function KpiCard({ label, icon: Icon, iconBg, iconColor, value, prefix = "", suf
           </div>
         </div>
 
-        <div className="flex items-baseline gap-1.5 flex-wrap">
+        <div className="flex items-baseline gap-1.5 flex-nowrap whitespace-nowrap overflow-hidden text-ellipsis">
           {prefix && (
-            <span className="text-xl font-bold" style={{ color: accentColor }}>
+            <span className="text-lg sm:text-xl font-bold whitespace-nowrap shrink-0" style={{ color: accentColor }}>
               {prefix}
             </span>
           )}
           <span
-            className="text-[2.1rem] font-extrabold tracking-tight leading-none"
+            className="text-xl sm:text-[2.1rem] font-extrabold tracking-tight leading-none whitespace-nowrap truncate"
             style={{ color: accentColor }}
           >
             {typeof value === "number" ? animated.toFixed(value % 1 === 0 && value < 1000 ? 0 : 2) : value}
           </span>
           {suffix && (
-            <span className="text-sm font-bold" style={{ color: accentColor + "BB" }}>
+            <span className="text-xs sm:text-sm font-bold whitespace-nowrap shrink-0" style={{ color: accentColor + "BB" }}>
               {suffix}
             </span>
           )}
@@ -807,12 +807,12 @@ const Dashboard = () => {
             </div>
 
             {/* Interactive Tab Selectors */}
-            <div className="flex bg-[#EEEDDF] p-1 rounded-xl border border-[#DDDDD0] mb-4 gap-1">
+            <div className="flex bg-[#EEEDDF] p-1 rounded-xl border border-[#DDDDD0] mb-4 gap-1 overflow-x-auto scrollbar-thin max-w-full">
               {dynamicAiInsights.map((insight, idx) => (
                 <button
                   key={idx}
                   onClick={() => setActiveInsightTab(idx)}
-                  className={`flex-1 py-1.5 text-[10px] sm:text-xs font-extrabold rounded-lg transition-all cursor-pointer ${
+                  className={`flex-1 py-1.5 px-2.5 text-[10px] sm:text-xs font-extrabold rounded-lg transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                     activeInsightTab === idx
                       ? "bg-[#2F5241] text-[#E4E5DB] shadow-sm"
                       : "text-[#64748B] hover:text-[#152A38] hover:bg-[#F5F4EC]/60"

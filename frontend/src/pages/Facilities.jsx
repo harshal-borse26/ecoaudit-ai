@@ -546,41 +546,41 @@ const Facilities = () => {
               </div>
 
               {/* Metrics Columns inside restful background pill */}
-              <div className="bg-[#EEEDDF] border border-[#DDDDD0] rounded-2xl p-4 grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">
+              <div className="bg-[#EEEDDF] border border-[#DDDDD0] rounded-2xl p-3.5 sm:p-4 grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">
                 {/* Carbon Emission */}
                 <div>
-                  <span className="text-[10px] font-extrabold text-[#7A8597] uppercase tracking-wider block mb-0.5">CARBON EMISSION</span>
-                  <div className="text-sm sm:text-base font-extrabold text-[#EF4444]">
+                  <span className="text-[9.5px] font-extrabold text-[#7A8597] uppercase tracking-wider block mb-0.5 whitespace-nowrap">CARBON EMISSION</span>
+                  <div className="text-xs sm:text-base font-extrabold text-[#EF4444] whitespace-nowrap">
                     {fac.carbonEmission > 0 ? `${fac.carbonEmission.toFixed(1)} kg` : "0.0 kg"}
                   </div>
-                  <span className="text-[10px] font-semibold text-[#7A8597]">{fac.pctShare}% of total</span>
+                  <span className="text-[10px] font-semibold text-[#7A8597] whitespace-nowrap">{fac.pctShare}% of total</span>
                 </div>
 
                 {/* Bills */}
                 <div>
-                  <span className="text-[10px] font-extrabold text-[#7A8597] uppercase tracking-wider block mb-0.5">TOTAL BILLS</span>
-                  <div className="text-sm sm:text-base font-extrabold text-[#152A38]">{fac.totalBills} Invoices</div>
+                  <span className="text-[9.5px] font-extrabold text-[#7A8597] uppercase tracking-wider block mb-0.5 whitespace-nowrap">TOTAL BILLS</span>
+                  <div className="text-xs sm:text-base font-extrabold text-[#152A38] whitespace-nowrap">{fac.totalBills} Invoices</div>
                   <span className="text-[10px] font-semibold text-[#7A8597]">This period</span>
                 </div>
 
                 {/* AI Status */}
                 <div>
-                  <span className="text-[10px] font-extrabold text-[#7A8597] uppercase tracking-wider block mb-0.5">AI STATUS</span>
-                  <div className="text-sm sm:text-base font-extrabold text-[#2F5241]">{fac.aiStatus}</div>
+                  <span className="text-[9.5px] font-extrabold text-[#7A8597] uppercase tracking-wider block mb-0.5 whitespace-nowrap">AI STATUS</span>
+                  <div className="text-xs sm:text-base font-extrabold text-[#2F5241] whitespace-nowrap">{fac.aiStatus}</div>
                   <span className="text-[10px] font-semibold text-[#7A8597]">System check</span>
                 </div>
 
                 {/* Primary Utility */}
                 <div>
-                  <span className="text-[10px] font-extrabold text-[#7A8597] uppercase tracking-wider block mb-0.5">PRIMARY UTILITY</span>
-                  <div className="text-sm sm:text-base font-extrabold text-[#1565C0]">{fac.dominantUtility}</div>
+                  <span className="text-[9.5px] font-extrabold text-[#7A8597] uppercase tracking-wider block mb-0.5 whitespace-nowrap">PRIMARY UTILITY</span>
+                  <div className="text-xs sm:text-base font-extrabold text-[#1565C0] whitespace-nowrap">{fac.dominantUtility}</div>
                   <span className="text-[10px] font-semibold text-[#7A8597]">Dominant resource</span>
                 </div>
 
                 {/* Trend */}
-                <div className="col-span-2 sm:col-span-1">
-                  <span className="text-[10px] font-extrabold text-[#7A8597] uppercase tracking-wider block mb-0.5">TREND (MOM)</span>
-                  <div className={`text-sm sm:text-base font-extrabold ${fac.trendDirection === "up" ? "text-[#EF4444]" : "text-[#2F5241]"}`}>
+                <div className="col-span-2 sm:col-span-1 pt-1.5 sm:pt-0 border-t sm:border-t-0 border-[#D4D4C4]/50">
+                  <span className="text-[9.5px] font-extrabold text-[#7A8597] uppercase tracking-wider block mb-0.5 whitespace-nowrap">TREND (MOM)</span>
+                  <div className={`text-xs sm:text-base font-extrabold whitespace-nowrap ${fac.trendDirection === "up" ? "text-[#EF4444]" : "text-[#2F5241]"}`}>
                     {fac.trendDirection === "up" ? "▲" : fac.trendDirection === "down" ? "▼" : ""} {fac.trendPct > 0 ? `${fac.trendPct.toFixed(1)}%` : "Stable"}
                   </div>
                   <span className="text-[10px] font-semibold text-[#7A8597]">vs last month</span>
@@ -589,7 +589,7 @@ const Facilities = () => {
 
               {/* AI INSIGHT BANNER & ACTION BUTTONS */}
               <div className="bg-[#EAF2ED] border border-[#2F5241]/20 rounded-2xl p-3.5 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5 flex-1">
+                <div className="flex items-center gap-2.5 flex-1 min-w-0">
                   <div className="w-7 h-7 rounded-xl bg-[#2F5241] text-[#E4E5DB] flex items-center justify-center shrink-0 shadow-xs">
                     <Sparkles className="w-3.5 h-3.5" />
                   </div>
@@ -598,15 +598,15 @@ const Facilities = () => {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
                   <button
-                    className="px-3.5 py-2 bg-[#EEEDDF] border border-[#D4D4C4] text-[#152A38] font-extrabold text-xs rounded-xl hover:bg-[#EEEDDF]/80 transition-all cursor-pointer active:scale-95"
+                    className="flex-1 sm:flex-initial px-3.5 py-2 bg-[#EEEDDF] border border-[#D4D4C4] text-[#152A38] font-extrabold text-xs rounded-xl hover:bg-[#EEEDDF]/80 transition-all cursor-pointer text-center active:scale-95 whitespace-nowrap"
                     onClick={() => openFacilityDrawer(fac)}
                   >
                     View Details →
                   </button>
                   <button
-                    className="px-3.5 py-2 bg-[#2F5241] text-[#E4E5DB] font-extrabold text-xs rounded-xl shadow-xs hover:bg-[#234035] transition-all cursor-pointer active:scale-95"
+                    className="flex-1 sm:flex-initial px-3.5 py-2 bg-[#2F5241] text-[#E4E5DB] font-extrabold text-xs rounded-xl shadow-xs hover:bg-[#234035] transition-all cursor-pointer text-center active:scale-95 whitespace-nowrap"
                     onClick={() => navigate(`/facilities/${fac.id}`)}
                   >
                     Full Page →
