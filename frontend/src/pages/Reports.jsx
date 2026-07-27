@@ -415,10 +415,10 @@ const Reports = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 shrink-0 w-full sm:w-auto">
           <button
             onClick={fetchInitialData}
-            className="p-2.5 bg-[#EEEDDF] border border-[#D4D4C4] text-[#7A8597] hover:text-[#152A38] hover:bg-[#E4E3D6] rounded-2xl transition-all cursor-pointer active:scale-95"
+            className="p-2.5 bg-[#EEEDDF] border border-[#D4D4C4] text-[#7A8597] hover:text-[#152A38] hover:bg-[#E4E3D6] rounded-2xl transition-all cursor-pointer active:scale-95 shrink-0"
             title="Refresh Workspace Data"
           >
             <RefreshCw className={`w-4 h-4 ${previewLoading ? "animate-spin text-[#2F5241]" : ""}`} />
@@ -427,7 +427,7 @@ const Reports = () => {
           <button
             onClick={() => handleGeneratePreview()}
             disabled={previewLoading}
-            className="px-4 py-2.5 bg-[#2F5241] hover:bg-[#234035] active:scale-95 text-[#E4E5DB] font-extrabold text-xs rounded-2xl shadow-xs transition-all flex items-center gap-2 cursor-pointer disabled:opacity-60"
+            className="flex-1 sm:flex-initial px-4 py-2.5 bg-[#2F5241] hover:bg-[#234035] active:scale-95 text-[#E4E5DB] font-extrabold text-xs rounded-2xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 whitespace-nowrap"
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span>{previewLoading ? "Building Preview..." : "Generate Preview"}</span>
@@ -436,14 +436,14 @@ const Reports = () => {
           <button
             onClick={handleDownloadPDF}
             disabled={generatingPdf || !reportData}
-            className="px-4 py-2.5 bg-[#EEEDDF] border border-[#2F5241]/30 text-[#2F5241] hover:bg-[#EAF2ED] active:scale-95 font-extrabold text-xs rounded-2xl transition-all flex items-center gap-2 cursor-pointer disabled:opacity-60"
+            className="flex-1 sm:flex-initial px-4 py-2.5 bg-[#EEEDDF] border border-[#2F5241]/30 text-[#2F5241] hover:bg-[#EAF2ED] active:scale-95 font-extrabold text-xs rounded-2xl transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 whitespace-nowrap"
           >
             <Download className="w-3.5 h-3.5" />
             <span>{generatingPdf ? "Exporting PDF..." : "Export PDF Report"}</span>
           </button>
 
           {/* More Export Options Dropdown */}
-          <div className="relative">
+          <div className="relative shrink-0">
             <button
               onClick={() => setShowExportMenu(!showExportMenu)}
               disabled={!reportData}
@@ -502,12 +502,12 @@ const Reports = () => {
 
       {/* REPORT CONFIGURATION WORKSPACE PANEL */}
       <div className="bg-[#F7F6EE] border border-[#D4D4C4] rounded-[24px] p-5 sm:p-6 shadow-xs space-y-4">
-        <div className="flex items-center justify-between border-b border-[#D4D4C4]/60 pb-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#D4D4C4]/60 pb-3">
           <div className="flex items-center gap-2 text-[#152A38]">
-            <Sliders className="w-4 h-4 text-[#2F5241]" />
-            <h2 className="text-sm font-extrabold tracking-tight">Report Configuration Workspace</h2>
+            <Sliders className="w-4 h-4 text-[#2F5241] shrink-0" />
+            <h2 className="text-xs sm:text-sm font-extrabold tracking-tight">Report Configuration Workspace</h2>
           </div>
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#7A8597] bg-[#EEEDDF] px-2.5 py-1 rounded-full border border-[#D4D4C4]">
+          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#7A8597] bg-[#EEEDDF] px-2.5 py-1 rounded-full border border-[#D4D4C4] shrink-0 whitespace-nowrap">
             3 Control Steps
           </span>
         </div>
@@ -713,28 +713,28 @@ const Reports = () => {
 
       {/* METRICS SUMMARY ROW */}
       {reportData && (
-        <div className="bg-[#EEEDDF] border border-[#DDDDD0] rounded-2xl p-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+        <div className="bg-[#EEEDDF] border border-[#DDDDD0] rounded-2xl p-4 grid grid-cols-2 lg:grid-cols-4 gap-4 text-center">
           <div>
             <span className="text-[9.5px] font-extrabold text-[#7A8597] uppercase tracking-wider block">TOTAL FACILITIES</span>
-            <div className="text-base font-extrabold text-[#152A38] mt-0.5">
+            <div className="text-sm sm:text-base font-extrabold text-[#152A38] mt-0.5">
               {reportData.executiveSummary.facilitiesCovered} Sites
             </div>
           </div>
           <div>
             <span className="text-[9.5px] font-extrabold text-[#7A8597] uppercase tracking-wider block">PROCESSED BILLS</span>
-            <div className="text-base font-extrabold text-[#152A38] mt-0.5">
+            <div className="text-sm sm:text-base font-extrabold text-[#152A38] mt-0.5">
               {reportData.executiveSummary.processedBills} Documents
             </div>
           </div>
           <div>
             <span className="text-[9.5px] font-extrabold text-[#7A8597] uppercase tracking-wider block">TOTAL CARBON EMISSIONS</span>
-            <div className="text-base font-extrabold text-[#EF4444] mt-0.5">
+            <div className="text-xs sm:text-base font-extrabold text-[#EF4444] mt-0.5 whitespace-nowrap">
               {reportData.executiveSummary.totalCarbonEmission.toFixed(2)} kg CO2e
             </div>
           </div>
           <div>
             <span className="text-[9.5px] font-extrabold text-[#7A8597] uppercase tracking-wider block">REPORTING PERIOD</span>
-            <div className="text-sm font-extrabold text-[#2F5241] mt-0.5 truncate">
+            <div className="text-xs sm:text-sm font-extrabold text-[#2F5241] mt-0.5 leading-snug">
               {reportData.filterScope.periodLabel}
             </div>
           </div>
@@ -907,12 +907,12 @@ const Reports = () => {
 
               {/* SECTION 1: COVER PAGE */}
               <div id="section-cover" className="border border-[#D4D4C4] rounded-2xl p-4 sm:p-10 bg-[#EEEDDF] text-center space-y-6">
-                <div className="flex items-center justify-between border-b border-[#D4D4C4] pb-4">
-                  <span className="font-extrabold text-lg text-[#152A38] flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-[#2F5241]" />
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-[#D4D4C4] pb-4 text-center sm:text-left">
+                  <span className="font-extrabold text-base sm:text-lg text-[#152A38] flex items-center gap-2 whitespace-nowrap">
+                    <Sparkles className="w-5 h-5 text-[#2F5241] shrink-0" />
                     EcoAudit AI
                   </span>
-                  <span className="bg-[#152A38] text-[#E4E5DB] text-[10px] font-extrabold uppercase px-3 py-1 rounded-full tracking-wider">
+                  <span className="bg-[#152A38] text-[#E4E5DB] text-[9.5px] sm:text-[10px] font-extrabold uppercase px-3 py-1 rounded-full tracking-wider whitespace-nowrap">
                     ENTERPRISE AUDIT REPORT
                   </span>
                 </div>
@@ -1145,14 +1145,14 @@ const Reports = () => {
                       {reportData.facilityBreakdown?.map((fac) => (
                         <React.Fragment key={fac.id}>
                           <tr className="hover:bg-[#E4E3D6]/50 transition-colors">
-                            <td className="p-3 font-extrabold">{fac.name}</td>
-                            <td className="p-3">{fac.location}</td>
-                            <td className="p-3">{fac.billsCount}</td>
-                            <td className="p-3 text-[#EF4444] font-extrabold">{fac.carbonEmission.toFixed(2)} kg CO2e</td>
-                            <td className="p-3 font-extrabold">{fac.pctShare}%</td>
-                            <td className="p-3 font-bold">{fac.dominantUtility || "Electricity"}</td>
-                            <td className="p-3">
-                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${parseFloat(fac.pctShare) > 40 ? "bg-red-100 text-red-600" : "bg-emerald-100 text-emerald-700"}`}>
+                            <td className="p-3 font-extrabold whitespace-nowrap">{fac.name}</td>
+                            <td className="p-3 whitespace-nowrap">{fac.location}</td>
+                            <td className="p-3 whitespace-nowrap">{fac.billsCount}</td>
+                            <td className="p-3 text-[#EF4444] font-extrabold whitespace-nowrap">{fac.carbonEmission.toFixed(2)} kg CO2e</td>
+                            <td className="p-3 font-extrabold whitespace-nowrap">{fac.pctShare}%</td>
+                            <td className="p-3 font-bold whitespace-nowrap">{fac.dominantUtility || "Electricity"}</td>
+                            <td className="p-3 whitespace-nowrap">
+                              <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold whitespace-nowrap inline-flex items-center gap-1 ${parseFloat(fac.pctShare) > 40 ? "bg-red-100 text-red-600" : "bg-emerald-100 text-emerald-700"}`}>
                                 ● {parseFloat(fac.pctShare) > 40 ? "High Impact" : "Healthy"}
                               </span>
                             </td>
