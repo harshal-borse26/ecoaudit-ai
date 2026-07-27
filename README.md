@@ -290,39 +290,21 @@ Deploy the backend to your preferred Node.js hosting platform and configure the 
 
 ## Screenshots
 
+### Dashboard Page
 ![Dashboard Page](screenshots/dashboard.png)
 
 ---
 
+### Facilities Page
 ![Facilities Page](screenshots/facilities.png)
 
 ---
 
+### Utility Bill Page
 ![Utility Bill Page](screenshots/bills.png)
 
 ---
 
+### Reports Generate Page
 ![Reports Generated Page](screenshots/reports.png)
 
----
-
-
-### Recommended preview order
-
-1. Authentication screens
-2. Dashboard
-3. Facilities
-4. Bills and bill drawer
-5. Reporting center
-6. Profile page
-
-You can add or rename files as needed, but keep the filenames consistent with the README references.
-
----
-
-## Future Improvements
-
-* Skeleton loading across major pages
-* Better bill processing speed and caching
-* Server-side aggregation for charts and analytics
-* Smarter duplicate bill detectio

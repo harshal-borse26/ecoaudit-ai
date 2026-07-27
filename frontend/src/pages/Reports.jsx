@@ -98,6 +98,7 @@ const Reports = () => {
   const [successMsg, setSuccessMsg] = useState("");
   const [activeSection, setActiveSection] = useState("section-cover");
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [showMobileSections, setShowMobileSections] = useState(false);
 
   // Configuration States
   const [scopeMode, setScopeMode] = useState("COMPANY_WIDE");
@@ -795,41 +796,100 @@ const Reports = () => {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
-          {/* Left Section List Sticky Navigation */}
-          <div className="lg:col-span-3 sticky top-24 bg-[#F7F6EE] border border-[#D4D4C4] rounded-[24px] p-4 shadow-xs space-y-3">
-            <div className="px-2 border-b border-[#D4D4C4]/60 pb-2">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#7A8597]">
-                REPORT STRUCTURE (14 SECTIONS)
-              </span>
-            </div>
+          {/* Left Section List Navigation (Responsive: Collapsible Header on Mobile, Sticky Rail on Desktop) */}
+          <div className="lg:col-span-3 lg:sticky lg:top-24 z-20 space-y-3">
             
-            <nav className="space-y-1 max-h-[calc(100vh-260px)] overflow-y-auto pr-1 scrollbar-thin">
-              {PREVIEW_SECTIONS.map((sec) => (
-                <button
-                  key={sec.id}
-                  onClick={() => scrollToSection(sec.id)}
-                  className={`w-full text-left py-2 px-3 text-xs font-extrabold rounded-xl transition-all cursor-pointer truncate ${
-                    activeSection === sec.id
-                      ? "bg-[#EAF2ED] text-[#2F5241] border-l-4 border-[#2F5241] shadow-2xs"
-                      : "text-[#7A8597] hover:text-[#152A38] hover:bg-[#EEEDDF]"
-                  }`}
-                  title={sec.label}
-                >
-                  {sec.label}
-                </button>
-              ))}
-            </nav>
-
-            <div className="pt-2 border-t border-[#D4D4C4]/60">
+            {/* Mobile / Tablet Collapsible Header (< lg) */}
+            <div className="block lg:hidden bg-[#F7F6EE] border border-[#D4D4C4] rounded-2xl p-3 shadow-xs">
               <button
-                className="w-full py-2 px-3 bg-[#2F5241] hover:bg-[#234035] active:scale-95 text-[#E4E5DB] font-extrabold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
-                onClick={handleDownloadPDF}
-                disabled={generatingPdf}
+                onClick={() => setShowMobileSections(!showMobileSections)}
+                className="w-full flex items-center justify-between py-1 px-1 text-xs font-extrabold text-[#152A38] cursor-pointer"
               >
-                <Download className="w-3.5 h-3.5" />
-                <span>{generatingPdf ? "Exporting PDF..." : "Export PDF Report"}</span>
+                <div className="flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-[#2F5241]" />
+                  <span>REPORT STRUCTURE ({PREVIEW_SECTIONS.length} SECTIONS)</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-[#7A8597]">
+                  <span className="text-[11px] font-bold text-[#2F5241] truncate max-w-[120px]">
+                    {PREVIEW_SECTIONS.find((s) => s.id === activeSection)?.label || "Menu"}
+                  </span>
+                  <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showMobileSections ? "rotate-180" : ""}`} />
+                </div>
               </button>
+
+              {/* Mobile Collapsible Section Menu */}
+              {showMobileSections && (
+                <div className="mt-3 pt-3 border-t border-[#D4D4C4]/60 space-y-1 max-h-64 overflow-y-auto pr-1 scrollbar-thin">
+                  {PREVIEW_SECTIONS.map((sec) => (
+                    <button
+                      key={sec.id}
+                      onClick={() => {
+                        scrollToSection(sec.id);
+                        setShowMobileSections(false);
+                      }}
+                      className={`w-full text-left py-2 px-3 text-xs font-extrabold rounded-xl transition-all cursor-pointer truncate ${
+                        activeSection === sec.id
+                          ? "bg-[#EAF2ED] text-[#2F5241] border-l-4 border-[#2F5241] shadow-2xs"
+                          : "text-[#7A8597] hover:text-[#152A38] hover:bg-[#EEEDDF]"
+                      }`}
+                    >
+                      {sec.label}
+                    </button>
+                  ))}
+                  <div className="pt-2 border-t border-[#D4D4C4]/60">
+                    <button
+                      className="w-full py-2 px-3 bg-[#2F5241] hover:bg-[#234035] text-[#E4E5DB] font-extrabold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                      onClick={() => {
+                        handleDownloadPDF();
+                        setShowMobileSections(false);
+                      }}
+                      disabled={generatingPdf}
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>{generatingPdf ? "Exporting PDF..." : "Export PDF Report"}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
+
+            {/* Desktop Navigation Panel (lg and above) */}
+            <div className="hidden lg:block bg-[#F7F6EE] border border-[#D4D4C4] rounded-[24px] p-4 shadow-xs space-y-3">
+              <div className="px-2 border-b border-[#D4D4C4]/60 pb-2">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#7A8597]">
+                  REPORT STRUCTURE (14 SECTIONS)
+                </span>
+              </div>
+              
+              <nav className="space-y-1 max-h-[calc(100vh-260px)] overflow-y-auto pr-1 scrollbar-thin">
+                {PREVIEW_SECTIONS.map((sec) => (
+                  <button
+                    key={sec.id}
+                    onClick={() => scrollToSection(sec.id)}
+                    className={`w-full text-left py-2 px-3 text-xs font-extrabold rounded-xl transition-all cursor-pointer truncate ${
+                      activeSection === sec.id
+                        ? "bg-[#EAF2ED] text-[#2F5241] border-l-4 border-[#2F5241] shadow-2xs"
+                        : "text-[#7A8597] hover:text-[#152A38] hover:bg-[#EEEDDF]"
+                    }`}
+                    title={sec.label}
+                  >
+                    {sec.label}
+                  </button>
+                ))}
+              </nav>
+
+              <div className="pt-2 border-t border-[#D4D4C4]/60">
+                <button
+                  className="w-full py-2 px-3 bg-[#2F5241] hover:bg-[#234035] active:scale-95 text-[#E4E5DB] font-extrabold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                  onClick={handleDownloadPDF}
+                  disabled={generatingPdf}
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>{generatingPdf ? "Exporting PDF..." : "Export PDF Report"}</span>
+                </button>
+              </div>
+            </div>
+
           </div>
 
           {/* Right Report Canvas (14 Structured Executive Sections) */}
@@ -846,7 +906,7 @@ const Reports = () => {
               )}
 
               {/* SECTION 1: COVER PAGE */}
-              <div id="section-cover" className="border border-[#D4D4C4] rounded-2xl p-6 sm:p-10 bg-[#EEEDDF] text-center space-y-6">
+              <div id="section-cover" className="border border-[#D4D4C4] rounded-2xl p-4 sm:p-10 bg-[#EEEDDF] text-center space-y-6">
                 <div className="flex items-center justify-between border-b border-[#D4D4C4] pb-4">
                   <span className="font-extrabold text-lg text-[#152A38] flex items-center gap-2">
                     <Sparkles className="w-5 h-5 text-[#2F5241]" />
@@ -957,8 +1017,8 @@ const Reports = () => {
                   </h3>
                 </div>
 
-                <div className="bg-[#EEEDDF] border border-[#DDDDD0] rounded-2xl overflow-hidden text-xs">
-                  <table className="w-full text-left">
+                <div className="bg-[#EEEDDF] border border-[#DDDDD0] rounded-2xl overflow-x-auto text-xs scrollbar-thin">
+                  <table className="w-full text-left min-w-[480px]">
                     <tbody className="divide-y divide-[#D4D4C4] font-semibold text-[#152A38]">
                       <tr>
                         <td className="p-3 bg-[#E4E3D6] font-bold w-1/3 text-[#7A8597]">Corporate Entity</td>
@@ -1030,8 +1090,8 @@ const Reports = () => {
                 </div>
 
                 {reportData.monthlyTrend && reportData.monthlyTrend.length > 0 && (
-                  <div className="bg-[#EEEDDF] border border-[#DDDDD0] rounded-2xl overflow-hidden text-xs">
-                    <table className="w-full text-left">
+                  <div className="bg-[#EEEDDF] border border-[#DDDDD0] rounded-2xl overflow-x-auto text-xs scrollbar-thin">
+                    <table className="w-full text-left min-w-[480px]">
                       <thead className="bg-[#E4E3D6] border-b border-[#D4D4C4] font-extrabold text-[#7A8597]">
                         <tr>
                           <th className="p-3">Billing Month</th>
@@ -1068,8 +1128,8 @@ const Reports = () => {
                   </h3>
                 </div>
 
-                <div className="bg-[#EEEDDF] border border-[#DDDDD0] rounded-2xl overflow-hidden text-xs">
-                  <table className="w-full text-left">
+                <div className="bg-[#EEEDDF] border border-[#DDDDD0] rounded-2xl overflow-x-auto text-xs scrollbar-thin">
+                  <table className="w-full text-left min-w-[640px]">
                     <thead className="bg-[#E4E3D6] border-b border-[#D4D4C4] font-extrabold text-[#7A8597]">
                       <tr>
                         <th className="p-3">Facility Name</th>
@@ -1145,8 +1205,8 @@ const Reports = () => {
                   </h3>
                 </div>
 
-                <div className="bg-[#EEEDDF] border border-[#DDDDD0] rounded-2xl overflow-hidden text-xs">
-                  <table className="w-full text-left">
+                <div className="bg-[#EEEDDF] border border-[#DDDDD0] rounded-2xl overflow-x-auto text-xs scrollbar-thin">
+                  <table className="w-full text-left min-w-[580px]">
                     <thead className="bg-[#E4E3D6] border-b border-[#D4D4C4] font-extrabold text-[#7A8597]">
                       <tr>
                         <th className="p-3">Facility</th>
@@ -1272,8 +1332,8 @@ const Reports = () => {
                   </h3>
                 </div>
 
-                <div className="bg-[#EEEDDF] border border-[#DDDDD0] rounded-2xl overflow-hidden text-xs">
-                  <table className="w-full text-left">
+                <div className="bg-[#EEEDDF] border border-[#DDDDD0] rounded-2xl overflow-x-auto text-xs scrollbar-thin">
+                  <table className="w-full text-left min-w-[640px]">
                     <thead className="bg-[#E4E3D6] border-b border-[#D4D4C4] font-extrabold text-[#7A8597]">
                       <tr>
                         <th className="p-3">Priority</th>
@@ -1392,8 +1452,8 @@ const Reports = () => {
                   </h3>
                 </div>
 
-                <div className="bg-[#EEEDDF] border border-[#DDDDD0] rounded-2xl overflow-hidden text-xs">
-                  <table className="w-full text-left">
+                <div className="bg-[#EEEDDF] border border-[#DDDDD0] rounded-2xl overflow-x-auto text-xs scrollbar-thin">
+                  <table className="w-full text-left min-w-[640px]">
                     <thead className="bg-[#E4E3D6] border-b border-[#D4D4C4] font-extrabold text-[#7A8597]">
                       <tr>
                         <th className="p-3">Priority</th>
@@ -1445,8 +1505,8 @@ const Reports = () => {
                   <p><strong>Audit Reference ID:</strong> {reportData.governance?.auditReference || reportData.reportId}</p>
                 </div>
 
-                <div className="bg-[#EEEDDF] border border-[#DDDDD0] rounded-2xl overflow-hidden text-xs">
-                  <table className="w-full text-left">
+                <div className="bg-[#EEEDDF] border border-[#DDDDD0] rounded-2xl overflow-x-auto text-xs scrollbar-thin">
+                  <table className="w-full text-left min-w-[520px]">
                     <thead className="bg-[#E4E3D6] border-b border-[#D4D4C4] font-extrabold text-[#7A8597]">
                       <tr>
                         <th className="p-3">Facility Name</th>
