@@ -75,6 +75,7 @@ export default function CarbonTrendChartSection({
   const [selectedFacility, setSelectedFacility] = useState("ALL");
   const [selectedUtility, setSelectedUtility] = useState("ALL");
   const [showMovingAvg, setShowMovingAvg] = useState(true);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   const [hoveredPoint, setHoveredPoint] = useState(null);
   const [inspectPeriod, setInspectPeriod] = useState(null); // Drawer inspect state
@@ -389,90 +390,117 @@ export default function CarbonTrendChartSection({
         </div>
 
         {/* Filters Controls Toolbar */}
-        <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto">
-          {/* Time Range Selector */}
-          <div className="flex items-center bg-[#EEEDDF] p-1 rounded-xl border border-[#DDDDD0] shrink-0">
-            {["6M", "1Y", "ALL"].map((range) => (
-              <button
-                key={range}
-                onClick={() => setTimeRange(range)}
-                className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                  timeRange === range
-                    ? "bg-[#2F5241] text-[#E4E5DB] shadow-xs"
-                    : "text-[#7A8597] hover:text-[#152A38]"
-                }`}
-              >
-                {range}
-              </button>
-            ))}
-          </div>
-
-          {/* Granularity Selector */}
-          <div className="flex items-center bg-[#EEEDDF] p-1 rounded-xl border border-[#DDDDD0] shrink-0 overflow-x-auto scrollbar-thin max-w-full">
-            {[
-              { id: "AUTO", label: `Auto (${effectiveGranularity.slice(0, 1)}${effectiveGranularity.slice(1).toLowerCase()})` },
-              { id: "MONTHLY", label: "Monthly" },
-              { id: "WEEKLY", label: "Weekly" },
-              { id: "DAILY", label: "Daily" },
-            ].map((g) => (
-              <button
-                key={g.id}
-                onClick={() => setManualGranularity(g.id)}
-                className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
-                  manualGranularity === g.id
-                    ? "bg-[#152A38] text-white shadow-xs"
-                    : "text-[#7A8597] hover:text-[#152A38]"
-                }`}
-              >
-                {g.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Facility Scope Filter Dropdown */}
-          <div className="relative flex-1 min-w-[140px] sm:flex-initial">
-            <select
-              value={selectedFacility}
-              onChange={(e) => setSelectedFacility(e.target.value)}
-              className="w-full bg-[#EEEDDF] border border-[#DDDDD0] text-[#152A38] text-xs font-bold rounded-xl px-3 py-1.5 focus:outline-none focus:border-[#2F5241] cursor-pointer truncate"
-            >
-              <option value="ALL">🏢 All Monitored Sites</option>
-              {allFacilities.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.name}
-                </option>
+        <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-2.5 w-full xl:w-auto">
+          {/* Main Controls Row (Always visible and scrollable) */}
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-0.5 w-full xl:w-auto">
+            {/* Time Range Selector */}
+            <div className="flex items-center bg-[#EEEDDF] p-1 rounded-xl border border-[#DDDDD0] shrink-0">
+              {["6M", "1Y", "ALL"].map((range) => (
+                <button
+                  key={range}
+                  onClick={() => setTimeRange(range)}
+                  className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                    timeRange === range
+                      ? "bg-[#2F5241] text-[#E4E5DB] shadow-xs"
+                      : "text-[#7A8597] hover:text-[#152A38]"
+                  }`}
+                >
+                  {range}
+                </button>
               ))}
-            </select>
-          </div>
+            </div>
 
-          {/* Utility Filter Dropdown */}
-          <div className="relative flex-1 min-w-[130px] sm:flex-initial">
-            <select
-              value={selectedUtility}
-              onChange={(e) => setSelectedUtility(e.target.value)}
-              className="w-full bg-[#EEEDDF] border border-[#DDDDD0] text-[#152A38] text-xs font-bold rounded-xl px-3 py-1.5 focus:outline-none focus:border-[#2F5241] cursor-pointer truncate"
+            {/* Granularity Selector */}
+            <div className="flex items-center bg-[#EEEDDF] p-1 rounded-xl border border-[#DDDDD0] shrink-0">
+              {[
+                { id: "AUTO", label: `Auto` },
+                { id: "MONTHLY", label: "Monthly" },
+                { id: "WEEKLY", label: "Weekly" },
+                { id: "DAILY", label: "Daily" },
+              ].map((g) => (
+                <button
+                  key={g.id}
+                  onClick={() => setManualGranularity(g.id)}
+                  className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
+                    manualGranularity === g.id
+                      ? "bg-[#152A38] text-white shadow-xs"
+                      : "text-[#7A8597] hover:text-[#152A38]"
+                  }`}
+                >
+                  {g.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Mobile Filter Toggle */}
+            <button
+              onClick={() => setShowMobileFilters(!showMobileFilters)}
+              className="xl:hidden px-3 py-1.5 text-xs font-extrabold rounded-xl border bg-[#EEEDDF] text-[#152A38] border-[#DDDDD0] flex items-center gap-1.5 cursor-pointer shrink-0 hover:bg-[#E4E3D6] transition-colors"
             >
-              <option value="ALL">⚡ All Utilities</option>
-              <option value="ELECTRICITY">Electricity</option>
-              <option value="GAS">Natural Gas</option>
-              <option value="WATER">Water</option>
-              <option value="DIESEL">Diesel / Fuel</option>
-            </select>
+              <Filter className="w-3.5 h-3.5 text-[#2F5241]" />
+              <span>Filters</span>
+              {(selectedFacility !== "ALL" || selectedUtility !== "ALL" || !showMovingAvg) && (
+                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+              )}
+            </button>
           </div>
 
-          {/* Moving Average Toggle */}
-          <button
-            onClick={() => setShowMovingAvg(!showMovingAvg)}
-            className={`px-2.5 py-1.5 text-xs font-bold rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
-              showMovingAvg
-                ? "bg-[#2F5241]/10 text-[#2F5241] border-[#2F5241]/30 font-extrabold"
-                : "bg-[#EEEDDF] text-[#7A8597] border-[#DDDDD0]"
-            }`}
-            title="Toggle 3-Period Rolling Average Overlay Line"
-          >
-            <Layers className="w-3.5 h-3.5" />
-            Rolling Avg
-          </button>
+          {/* Collapsible Selectors (Visible on desktop, toggled on mobile) */}
+          <div className={`xl:flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full xl:w-auto ${
+            showMobileFilters 
+              ? "flex animate-slideDown bg-[#EEEDDF]/50 p-3 rounded-2xl border border-[#DDDDD0] mt-1.5 xl:mt-0 xl:p-0 xl:bg-transparent xl:border-0" 
+              : "hidden xl:flex"
+          }`}>
+            {/* Facility Scope Filter Dropdown */}
+            <div className="relative flex-1 min-w-[140px] sm:flex-initial">
+              <label className="block xl:hidden text-[9px] font-extrabold text-[#7A8597] uppercase mb-1">Site / Facility</label>
+              <select
+                value={selectedFacility}
+                onChange={(e) => setSelectedFacility(e.target.value)}
+                className="w-full bg-[#EEEDDF] border border-[#DDDDD0] text-[#152A38] text-xs font-bold rounded-xl px-3 py-1.5 focus:outline-none focus:border-[#2F5241] cursor-pointer truncate"
+              >
+                <option value="ALL">🏢 All Monitored Sites</option>
+                {allFacilities.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Utility Filter Dropdown */}
+            <div className="relative flex-1 min-w-[130px] sm:flex-initial">
+              <label className="block xl:hidden text-[9px] font-extrabold text-[#7A8597] uppercase mb-1">Utility Type</label>
+              <select
+                value={selectedUtility}
+                onChange={(e) => setSelectedUtility(e.target.value)}
+                className="w-full bg-[#EEEDDF] border border-[#DDDDD0] text-[#152A38] text-xs font-bold rounded-xl px-3 py-1.5 focus:outline-none focus:border-[#2F5241] cursor-pointer truncate"
+              >
+                <option value="ALL">⚡ All Utilities</option>
+                <option value="ELECTRICITY">Electricity</option>
+                <option value="GAS">Natural Gas</option>
+                <option value="WATER">Water</option>
+                <option value="DIESEL">Diesel / Fuel</option>
+              </select>
+            </div>
+
+            {/* Moving Average Toggle */}
+            <div className="flex flex-col xl:block">
+              <label className="block xl:hidden text-[9px] font-extrabold text-[#7A8597] uppercase mb-1">Trend Assistance</label>
+              <button
+                onClick={() => setShowMovingAvg(!showMovingAvg)}
+                className={`w-full xl:w-auto px-2.5 py-1.5 text-xs font-bold rounded-xl border transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
+                  showMovingAvg
+                    ? "bg-[#2F5241]/10 text-[#2F5241] border-[#2F5241]/30 font-extrabold"
+                    : "bg-[#EEEDDF] text-[#7A8597] border-[#DDDDD0]"
+                }`}
+                title="Toggle 3-Period Rolling Average Overlay Line"
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>Rolling Avg</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
