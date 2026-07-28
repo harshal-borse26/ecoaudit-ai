@@ -77,7 +77,7 @@ const LandingNavbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
         
         {/* ── ZONE 1: BRAND IDENTITY (LEFT) ────────────────────────────── */}
-        <Link to="/" className="inline-flex items-center gap-3 group text-decoration-none">
+        <Link to="/" className="inline-flex items-center gap-3 group text-decoration-none lg:pl-3">
           <motion.div 
             whileHover={{ scale: 1.08, rotate: 5 }}
             whileTap={{ scale: 0.96 }}
