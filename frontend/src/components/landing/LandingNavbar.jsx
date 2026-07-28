@@ -90,7 +90,7 @@ const LandingNavbar = () => {
             <span className="text-lg sm:text-xl font-extrabold tracking-tight text-[#152A38] block leading-none font-heading">
               EcoAudit <span className="text-[#2E7D32]">AI</span>
             </span>
-            <span className="text-[10px] sm:text-[11px] font-extrabold text-[#7A8597] tracking-wider uppercase mt-1 block">
+            <span className="text-[10px] sm:text-[11px] font-semibold text-[#7A8597] tracking-wider uppercase mt-1 block">
               Carbon Intelligence Platform
             </span>
           </div>
@@ -105,8 +105,8 @@ const LandingNavbar = () => {
                 key={item.id}
                 href={item.href}
                 onClick={() => setActiveSection(item.id)}
-                className={`relative px-4 py-2 rounded-full text-sm font-extrabold transition-colors cursor-pointer text-decoration-none flex items-center gap-1.5 ${
-                  isActive ? "text-[#E4E5DB]" : "text-[#152A38]/80 hover:text-[#152A38]"
+                className={`relative px-4 py-2 rounded-full text-sm font-semibold transition-colors cursor-pointer text-decoration-none flex items-center gap-1.5 ${
+                  isActive ? "text-[#E4E5DB] font-bold" : "text-[#152A38]/80 hover:text-[#152A38]"
                 }`}
               >
                 {isActive && (
@@ -127,7 +127,7 @@ const LandingNavbar = () => {
           {!token && (
             <Link
               to="/login"
-              className="px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold text-[#152A38] hover:text-[#2E7D32] hover:bg-[#EEEDDF] transition-all duration-200 text-decoration-none font-heading border border-transparent hover:border-[#DDDDD0]"
+              className="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-[#152A38] hover:text-[#2E7D32] hover:bg-[#EEEDDF] transition-all duration-200 text-decoration-none font-heading border border-transparent hover:border-[#DDDDD0]"
             >
               Sign In
             </Link>
@@ -137,7 +137,7 @@ const LandingNavbar = () => {
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             onClick={() => navigate(token ? "/dashboard" : "/signup")}
-            className="px-5 py-2.5 rounded-2xl bg-[#152A38] hover:bg-[#2F5241] text-[#E4E5DB] hover:text-white text-xs sm:text-sm font-extrabold shadow-md hover:shadow-lg transition-all duration-200 border border-[#2F5241]/40 flex items-center gap-2.5 cursor-pointer group"
+            className="px-5 py-2.5 rounded-2xl bg-[#152A38] hover:bg-[#2F5241] text-[#E4E5DB] hover:text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all duration-200 border border-[#2F5241]/40 flex items-center gap-2.5 cursor-pointer group"
           >
             <LayoutDashboard className="w-4 h-4 text-emerald-400 group-hover:rotate-12 transition-transform" />
             <span className="font-heading">{token ? "Launch Dashboard" : "Launch Platform"}</span>

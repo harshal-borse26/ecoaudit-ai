@@ -12,7 +12,6 @@ import ReportsSection from "../components/landing/ReportsSection";
 import SecuritySection from "../components/landing/SecuritySection";
 import TechnologySection from "../components/landing/TechnologySection";
 import FAQSection from "../components/landing/FAQSection";
-import CTASection from "../components/landing/CTASection";
 import LandingFooter from "../components/landing/LandingFooter";
 import ScrollToTop from "../components/landing/ScrollToTop";
 

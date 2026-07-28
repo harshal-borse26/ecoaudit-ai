@@ -142,10 +142,10 @@ const LandingFooter = () => {
             
             {/* COLUMN 1: PLATFORM */}
             <div className="space-y-3">
-              <h4 className="text-xs font-extrabold text-slate-300 uppercase tracking-wider block font-heading">
+              <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider block font-heading">
                 Platform
               </h4>
-              <ul className="space-y-2.5 text-xs font-bold text-slate-400 list-none p-0">
+              <ul className="space-y-2.5 text-xs font-semibold text-slate-400 list-none p-0">
                 <li><a href="#overview" className="hover:text-emerald-400 hover:translate-x-0.5 transition-all inline-block text-decoration-none">Dashboard</a></li>
                 <li><a href="#overview" className="hover:text-emerald-400 hover:translate-x-0.5 transition-all inline-block text-decoration-none">Facilities</a></li>
                 <li><a href="#modules" className="hover:text-emerald-400 hover:translate-x-0.5 transition-all inline-block text-decoration-none">AI OCR Ingestion</a></li>
@@ -156,10 +156,10 @@ const LandingFooter = () => {
 
             {/* COLUMN 2: RESOURCES & ARCHITECTURE */}
             <div className="space-y-3">
-              <h4 className="text-xs font-extrabold text-slate-300 uppercase tracking-wider block font-heading">
+              <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider block font-heading">
                 Resources
               </h4>
-              <ul className="space-y-2.5 text-xs font-bold text-slate-400 list-none p-0">
+              <ul className="space-y-2.5 text-xs font-semibold text-slate-400 list-none p-0">
                 <li><a href="#security" className="hover:text-emerald-400 hover:translate-x-0.5 transition-all inline-block text-decoration-none">Documentation</a></li>
                 <li><a href="#security" className="hover:text-emerald-400 hover:translate-x-0.5 transition-all inline-block text-decoration-none">Security Governance</a></li>
                 <li><a href="#technology" className="hover:text-emerald-400 hover:translate-x-0.5 transition-all inline-block text-decoration-none">Technology Stack</a></li>
@@ -170,10 +170,10 @@ const LandingFooter = () => {
 
             {/* COLUMN 3: DEVELOPERS & DATA */}
             <div className="space-y-3">
-              <h4 className="text-xs font-extrabold text-slate-300 uppercase tracking-wider block font-heading">
+              <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider block font-heading">
                 Developers
               </h4>
-              <ul className="space-y-2.5 text-xs font-bold text-slate-400 list-none p-0">
+              <ul className="space-y-2.5 text-xs font-semibold text-slate-400 list-none p-0">
                 <li><a href="#security" className="hover:text-emerald-400 hover:translate-x-0.5 transition-all inline-block text-decoration-none">REST API Spec</a></li>
                 <li><a href="#security" className="hover:text-emerald-400 hover:translate-x-0.5 transition-all inline-block text-decoration-none">JWT Bearer Auth</a></li>
                 <li><a href="#technology" className="hover:text-emerald-400 hover:translate-x-0.5 transition-all inline-block text-decoration-none">Gemini Vision AI</a></li>
@@ -184,10 +184,10 @@ const LandingFooter = () => {
 
             {/* COLUMN 4: COMPANY & ACCESS */}
             <div className="space-y-3">
-              <h4 className="text-xs font-extrabold text-slate-300 uppercase tracking-wider block font-heading">
+              <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider block font-heading">
                 Company & Access
               </h4>
-              <ul className="space-y-2.5 text-xs font-bold text-slate-400 list-none p-0">
+              <ul className="space-y-2.5 text-xs font-semibold text-slate-400 list-none p-0">
                 <li><Link to="/login" className="hover:text-emerald-400 hover:translate-x-0.5 transition-all inline-block text-decoration-none">Account Login</Link></li>
                 <li><Link to="/signup" className="hover:text-emerald-400 hover:translate-x-0.5 transition-all inline-block text-decoration-none">Register Enterprise</Link></li>
                 <li><a href="#security" className="hover:text-emerald-400 hover:translate-x-0.5 transition-all inline-block text-decoration-none">Privacy Policy</a></li>
