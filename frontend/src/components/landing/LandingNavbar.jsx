@@ -86,10 +86,10 @@ const LandingNavbar = () => {
             <Leaf className="w-5 h-5 stroke-[2.5]" />
           </motion.div>
           <div>
-            <span className="text-lg sm:text-xl font-extrabold tracking-tight text-[#152A38] block leading-none font-heading">
+            <span className="text-base sm:text-xl font-extrabold tracking-tight text-[#152A38] block leading-none font-heading">
               EcoAudit <span className="text-[#2E7D32]">AI</span>
             </span>
-            <span className="text-[10px] sm:text-[11px] font-semibold text-[#7A8597] tracking-wider uppercase mt-1 block">
+            <span className="hidden sm:block text-[10px] sm:text-[11px] font-semibold text-[#7A8597] tracking-wider uppercase mt-1">
               Carbon Intelligence Platform
             </span>
           </div>

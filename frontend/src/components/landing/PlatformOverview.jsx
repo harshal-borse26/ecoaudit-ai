@@ -43,8 +43,8 @@ const PlatformOverview = () => {
         </div>
 
         {/* TAB NAVIGATION STRIP */}
-        <div className="flex items-center justify-center gap-2 overflow-x-auto scrollbar-none pb-4 mb-8">
-          <div className="bg-[#EEEDDF] p-1.5 rounded-2xl border border-[#DDDDD0] flex items-center gap-2">
+        <div className="w-full overflow-x-auto scrollbar-none pb-4 mb-8 flex justify-start sm:justify-center px-1 sm:px-4">
+          <div className="bg-[#EEEDDF] p-1.5 rounded-2xl border border-[#DDDDD0] flex items-center gap-1.5 sm:gap-2 shrink-0">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -52,7 +52,7 @@ const PlatformOverview = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${isActive
+                  className={`px-3 py-2 sm:px-3.5 sm:py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap shrink-0 ${isActive
                       ? "bg-[#152A38] text-[#E4E5DB] shadow-sm"
                       : "text-[#7A8597] hover:text-[#152A38]"
                     }`}
@@ -66,7 +66,7 @@ const PlatformOverview = () => {
         </div>
 
         {/* INTERACTIVE DEMO CANVAS */}
-        <div className="dash-card bg-[#F7F6EE] border border-[#DDDDD0] rounded-[32px] p-5 sm:p-8 shadow-[0_20px_60px_rgba(21,42,56,0.08)] min-h-[460px] flex flex-col justify-between">
+        <div className="dash-card bg-[#F7F6EE] border border-[#DDDDD0] rounded-[32px] p-4 sm:p-8 shadow-[0_20px_60px_rgba(21,42,56,0.08)] min-h-[460px] flex flex-col justify-between">
           <AnimatePresence mode="wait">
 
             {/* VIEW 1: DASHBOARD */}
@@ -93,36 +93,36 @@ const PlatformOverview = () => {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="bg-[#EEEDDF] p-4 rounded-2xl border border-[#DDDDD0]">
-                    <span className="text-[10px] font-extrabold text-[#7A8597] uppercase tracking-wider block">Total Carbon Footprint</span>
-                    <span className="text-lg sm:text-xl font-extrabold text-[#152A38] block mt-1">16,374 kg CO₂e</span>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                  <div className="bg-[#EEEDDF] p-3.5 sm:p-4 rounded-2xl border border-[#DDDDD0]">
+                    <span className="text-[9.5px] sm:text-[10px] font-extrabold text-[#7A8597] uppercase tracking-wider block">Total Carbon Footprint</span>
+                    <span className="text-base sm:text-xl font-extrabold text-[#152A38] block mt-1">16,374 kg CO₂e</span>
                     <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 inline-block mt-1">
                       ▼ 12.4% vs prev
                     </span>
                   </div>
 
-                  <div className="bg-[#EEEDDF] p-4 rounded-2xl border border-[#DDDDD0]">
-                    <span className="text-[10px] font-extrabold text-[#7A8597] uppercase tracking-wider block">Scope 1 Direct</span>
-                    <span className="text-lg sm:text-xl font-extrabold text-[#152A38] block mt-1">6,120 kg CO₂e</span>
+                  <div className="bg-[#EEEDDF] p-3.5 sm:p-4 rounded-2xl border border-[#DDDDD0]">
+                    <span className="text-[9.5px] sm:text-[10px] font-extrabold text-[#7A8597] uppercase tracking-wider block">Scope 1 Direct</span>
+                    <span className="text-base sm:text-xl font-extrabold text-[#152A38] block mt-1">6,120 kg CO₂e</span>
                     <span className="text-[10px] font-medium text-[#7A8597] block mt-1">Natural Gas & Diesel</span>
                   </div>
 
-                  <div className="bg-[#EEEDDF] p-4 rounded-2xl border border-[#DDDDD0]">
-                    <span className="text-[10px] font-extrabold text-[#7A8597] uppercase tracking-wider block">Scope 2 Indirect</span>
-                    <span className="text-lg sm:text-xl font-extrabold text-[#152A38] block mt-1">10,254 kg CO₂e</span>
+                  <div className="bg-[#EEEDDF] p-3.5 sm:p-4 rounded-2xl border border-[#DDDDD0]">
+                    <span className="text-[9.5px] sm:text-[10px] font-extrabold text-[#7A8597] uppercase tracking-wider block">Scope 2 Indirect</span>
+                    <span className="text-base sm:text-xl font-extrabold text-[#152A38] block mt-1">10,254 kg CO₂e</span>
                     <span className="text-[10px] font-medium text-[#7A8597] block mt-1">Grid Electricity</span>
                   </div>
 
-                  <div className="bg-[#EEEDDF] p-4 rounded-2xl border border-[#DDDDD0]">
-                    <span className="text-[10px] font-extrabold text-[#7A8597] uppercase tracking-wider block">Active Monitored Sites</span>
-                    <span className="text-lg sm:text-xl font-extrabold text-[#2F5241] block mt-1">4 Facilities</span>
+                  <div className="bg-[#EEEDDF] p-3.5 sm:p-4 rounded-2xl border border-[#DDDDD0]">
+                    <span className="text-[9.5px] sm:text-[10px] font-extrabold text-[#7A8597] uppercase tracking-wider block">Active Monitored Sites</span>
+                    <span className="text-base sm:text-xl font-extrabold text-[#2F5241] block mt-1">4 Facilities</span>
                     <span className="text-[10px] font-extrabold text-[#2E7D32] block mt-1">100% Online</span>
                   </div>
                 </div>
 
-                <div className="bg-[#EEEDDF]/60 p-4 rounded-2xl border border-[#DDDDD0]">
-                  <div className="flex items-center justify-between text-xs font-bold text-[#152A38] mb-3">
+                <div className="bg-[#EEEDDF]/60 p-3.5 sm:p-4 rounded-2xl border border-[#DDDDD0]">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs font-bold text-[#152A38] mb-3 gap-1">
                     <span>Aggregated Carbon Emissions Trend Line (6-Month Rolling Average)</span>
                     <span className="text-[#2F5241] font-extrabold">TARGET: 14,200 kg</span>
                   </div>
@@ -169,7 +169,7 @@ const PlatformOverview = () => {
                       <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">Active</span>
                     </div>
                     <p className="text-[11px] font-medium text-[#7A8597]">45,000 sq ft • Commercial Office</p>
-                    <div className="pt-2 border-t border-[#DDDDD0] flex justify-between text-xs font-bold text-[#152A38]">
+                    <div className="pt-2 border-t border-[#DDDDD0] flex flex-col sm:flex-row sm:items-center justify-between text-xs font-bold text-[#152A38] gap-1">
                       <span>Monthly Carbon: 5,420 kg</span>
                       <span className="text-[#2F5241]">0.12 kg/sq ft</span>
                     </div>
@@ -181,7 +181,7 @@ const PlatformOverview = () => {
                       <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">Active</span>
                     </div>
                     <p className="text-[11px] font-medium text-[#7A8597]">68,000 sq ft • Data & Operations</p>
-                    <div className="pt-2 border-t border-[#DDDDD0] flex justify-between text-xs font-bold text-[#152A38]">
+                    <div className="pt-2 border-t border-[#DDDDD0] flex flex-col sm:flex-row sm:items-center justify-between text-xs font-bold text-[#152A38] gap-1">
                       <span>Monthly Carbon: 6,810 kg</span>
                       <span className="text-[#2F5241]">0.10 kg/sq ft</span>
                     </div>

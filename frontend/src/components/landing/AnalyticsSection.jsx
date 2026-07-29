@@ -50,15 +50,15 @@ const AnalyticsSection = () => {
           </div>
 
           {/* FILTER CONTROLS TOOLBAR */}
-          <div className="bg-[#EEEDDF] border border-[#DDDDD0] rounded-2xl p-2 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
+          <div className="bg-[#EEEDDF] border border-[#DDDDD0] rounded-2xl p-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none pb-0.5 sm:pb-0">
               {/* TIME RANGE */}
-              <div className="flex items-center bg-[#F7F6EE] p-1 rounded-xl border border-[#DDDDD0]">
+              <div className="flex items-center bg-[#F7F6EE] p-1 rounded-xl border border-[#DDDDD0] shrink-0">
                 {["6M", "1Y", "ALL"].map((range) => (
                   <button
                     key={range}
                     onClick={() => setTimeRange(range)}
-                    className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${timeRange === range
+                    className={`px-2.5 py-1 sm:px-3 sm:py-1 text-[11px] sm:text-xs font-bold rounded-lg transition-all cursor-pointer ${timeRange === range
                         ? "bg-[#2F5241] text-[#E4E5DB] shadow-xs"
                         : "text-[#7A8597] hover:text-[#152A38]"
                       }`}
@@ -69,12 +69,12 @@ const AnalyticsSection = () => {
               </div>
 
               {/* GRANULARITY */}
-              <div className="flex items-center bg-[#F7F6EE] p-1 rounded-xl border border-[#DDDDD0]">
+              <div className="flex items-center bg-[#F7F6EE] p-1 rounded-xl border border-[#DDDDD0] shrink-0">
                 {["AUTO", "MONTHLY", "WEEKLY"].map((g) => (
                   <button
                     key={g}
                     onClick={() => setGranularity(g)}
-                    className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${granularity === g
+                    className={`px-2 py-1 sm:px-2.5 sm:py-1 text-[11px] sm:text-xs font-bold rounded-lg transition-all cursor-pointer ${granularity === g
                         ? "bg-[#152A38] text-white shadow-xs"
                         : "text-[#7A8597] hover:text-[#152A38]"
                       }`}
@@ -88,7 +88,7 @@ const AnalyticsSection = () => {
             {/* ROLLING AVG TOGGLE */}
             <button
               onClick={() => setShowRollingAvg(!showRollingAvg)}
-              className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer ${showRollingAvg
+              className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-all flex items-center justify-center gap-1.5 cursor-pointer self-start sm:self-auto shrink-0 ${showRollingAvg
                   ? "bg-[#2F5241]/10 text-[#2F5241] border-[#2F5241]/30 font-extrabold"
                   : "bg-[#F7F6EE] text-[#7A8597] border-[#DDDDD0]"
                 }`}

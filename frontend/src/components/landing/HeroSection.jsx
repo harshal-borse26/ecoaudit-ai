@@ -112,23 +112,23 @@ const HeroSection = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="pt-4 border-t border-[#DDDDD0]/70 grid grid-cols-3 gap-3 text-left"
+              className="pt-4 border-t border-[#DDDDD0]/70 grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 text-left"
             >
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-[#2E7D32] shrink-0" />
-                <span className="text-[11px] font-extrabold text-[#152A38] block leading-tight">
+                <span className="text-[11px] sm:text-xs font-extrabold text-[#152A38] block leading-tight">
                   GHG Protocol Aligned
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-[#2E7D32] shrink-0" />
-                <span className="text-[11px] font-extrabold text-[#152A38] block leading-tight">
+                <span className="text-[11px] sm:text-xs font-extrabold text-[#152A38] block leading-tight">
                   96.5% Extraction Speed
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-[#2E7D32] shrink-0" />
-                <span className="text-[11px] font-extrabold text-[#152A38] block leading-tight">
+                <span className="text-[11px] sm:text-xs font-extrabold text-[#152A38] block leading-tight">
                   Multi-Tenant Security
                 </span>
               </div>
@@ -146,13 +146,13 @@ const HeroSection = () => {
                 transform: `rotateY(${mousePos.x * 0.15}deg) rotateX(${-mousePos.y * 0.15}deg)`,
                 transformStyle: "preserve-3d",
               }}
-              className="dash-card bg-white border border-[#DDDDD0] rounded-[32px] p-6 sm:p-7 shadow-[0_20px_50px_rgba(21,42,56,0.08)] relative transition-transform duration-200"
+              className="dash-card bg-white border border-[#DDDDD0] rounded-[32px] p-4 sm:p-7 shadow-[0_20px_50px_rgba(21,42,56,0.08)] relative transition-transform duration-200"
             >
 
               {/* TOP APPLICATION HEADER BAR */}
-              <div className="flex items-center justify-between pb-4 mb-4 border-b border-[#DDDDD0]">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-4 mb-4 border-b border-[#DDDDD0]">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-[#152A38] text-emerald-400 flex items-center justify-center text-xs font-bold shadow-2xs">
+                  <div className="w-8 h-8 rounded-xl bg-[#152A38] text-emerald-400 flex items-center justify-center text-xs font-bold shadow-2xs shrink-0">
                     <TrendingUp className="w-4 h-4" />
                   </div>
                   <div className="text-left">
@@ -165,12 +165,12 @@ const HeroSection = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
                   {["overview", "ocr", "facility", "report"].map((t) => (
                     <button
                       key={t}
                       onClick={() => setActiveTab(t)}
-                      className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold transition-all cursor-pointer uppercase ${activeTab === t
+                      className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[9.5px] sm:text-[10px] font-extrabold transition-all cursor-pointer uppercase shrink-0 ${activeTab === t
                           ? "bg-[#152A38] text-[#E4E5DB] shadow-2xs"
                           : "bg-[#EEEDDF] text-[#7A8597] hover:text-[#152A38]"
                         }`}

@@ -5,14 +5,7 @@ import {
   Leaf,
   ArrowRight,
   ShieldCheck,
-  CheckCircle2,
-  Sparkles,
-  ExternalLink,
-  Cpu,
-  Lock,
-  Database,
-  Globe,
-  Check
+  Sparkles
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 
@@ -20,24 +13,15 @@ const LandingFooter = () => {
   const navigate = useNavigate();
   const { token } = useAuth();
 
-  const trustBadges = [
-    { label: "AES-256 Encryption", icon: Lock },
-    { label: "Role-Based Access (ORG_ADMIN)", icon: ShieldCheck },
-    { label: "Multi-Tenant Isolation", icon: Globe },
-    { label: "Google Gemini 1.5 Vision", icon: Cpu },
-    { label: "React 18 & Node.js API", icon: Database },
-    { label: "Audit-Ready Compliance", icon: CheckCircle2 },
-  ];
-
   return (
-    <footer className="bg-[#152A38] text-[#E4E5DB] relative overflow-hidden pt-16 pb-12 border-t border-[#2F5241]/40 text-left">
+    <footer className="bg-[#152A38] text-[#E4E5DB] relative overflow-hidden pt-12 pb-8 border-t border-[#2F5241]/40 text-left">
 
       {/* SOFT AMBIENT BACKGROUND GLOWS */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[#2F5241]/15 rounded-full blur-[160px] pointer-events-none -z-0" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-[#2F5241]/15 rounded-full blur-[160px] pointer-events-none -z-0" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-10">
 
-        {/* ── LAYER 1: ENTERPRISE CTA CONVERSION CARD ─────────────────────── */}
+        {/* ── LAYER 1: ENTERPRISE CTA CONVERSION CARD (UNCHANGED) ─────────── */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -82,117 +66,75 @@ const LandingFooter = () => {
             </a>
           </div>
 
-          <div className="pt-4 flex items-center justify-center gap-6 text-[11px] font-bold text-slate-400 relative z-10">
+          <div className="pt-4 flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-[10.5px] sm:text-[11px] font-bold text-slate-400 relative z-10">
             <span className="flex items-center gap-1.5 text-emerald-400">
               <ShieldCheck className="w-3.5 h-3.5" /> Enterprise Ready
             </span>
-            <span>•</span>
+            <span className="hidden sm:inline">•</span>
             <span>Zero Setup Fee</span>
-            <span>•</span>
+            <span className="hidden sm:inline">•</span>
             <span>14-Section PDF Exports</span>
           </div>
         </motion.div>
 
-        {/* ── LAYER 2 & 3: BRAND STORYTELLING & PRODUCT NAVIGATION ─────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 pt-4">
-
-          {/* LEFT: BRAND STORYTELLING & TRUST CHECKLIST */}
-          <div className="lg:col-span-4 space-y-6">
-
-            {/* LOGO & TYPOGRAPHY */}
-            <Link to="/" className="inline-flex items-center gap-3 group text-decoration-none">
-              <div className="w-10 h-10 rounded-xl bg-[#2F5241] text-[#E4E5DB] flex items-center justify-center shadow-xs border border-[#2F5241]/40">
-                <Leaf className="w-5 h-5 text-emerald-300 stroke-[2.5]" />
+        {/* ── LOWER FOOTER: COMPACT BRAND & 3 SHORT NAVIGATION COLUMNS ───────── */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pt-2 items-start">
+          
+          {/* LEFT: BRAND & BRIEF SUMMARY */}
+          <div className="md:col-span-5 space-y-3">
+            <Link to="/" className="inline-flex items-center gap-2.5 group text-decoration-none">
+              <div className="w-8 h-8 rounded-xl bg-[#2F5241] text-[#E4E5DB] flex items-center justify-center shadow-xs border border-[#2F5241]/40">
+                <Leaf className="w-4 h-4 text-emerald-300 stroke-[2.5]" />
               </div>
-              <div>
-                <span className="text-xl font-extrabold tracking-tight text-white block leading-none font-heading">
-                  EcoAudit <span className="text-emerald-400">AI</span>
-                </span>
-                <span className="text-[10px] font-extrabold text-slate-400 tracking-wider uppercase mt-0.5 block">
-                  Carbon Intelligence Platform
-                </span>
-              </div>
+              <span className="text-lg font-extrabold tracking-tight text-white block leading-none font-heading">
+                EcoAudit <span className="text-emerald-400">AI</span>
+              </span>
             </Link>
-
-            {/* BRAND DESCRIPTION */}
-            <p className="text-xs sm:text-sm text-slate-300 font-medium leading-relaxed max-w-sm">
-              EcoAudit AI is an enterprise-grade carbon accounting platform that transforms raw utility invoices into verified Scope 1 & Scope 2 greenhouse gas intelligence and audit-ready compliance disclosures.
+            <p className="text-xs text-slate-400 font-medium leading-relaxed max-w-sm">
+              Enterprise Scope 1 & 2 carbon accounting platform for automated utility OCR ingestion and audit-ready ESG disclosures.
             </p>
-
-            {/* TRUST CHECKLIST BADGES */}
-            <div className="space-y-2 pt-1 text-xs font-extrabold text-slate-300">
-              <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>Enterprise Multi-Tenant Isolation (`ORG_ADMIN`)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>Gemini Vision Multimodal OCR Ingestion</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>14-Section ESG Compliance Engine</span>
-              </div>
-            </div>
-
           </div>
 
-          {/* RIGHT: STRUCTURED NAVIGATION COLUMNS (4 COLUMNS) */}
-          <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-8">
-
-            {/* COLUMN 1: PLATFORM */}
-            <div className="space-y-3">
+          {/* RIGHT: 3 SHORT COLUMNS MAX */}
+          <div className="md:col-span-7 grid grid-cols-3 gap-4 sm:gap-8 text-left">
+            
+            {/* COLUMN 1: PRODUCT */}
+            <div className="space-y-2.5">
               <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider block font-heading">
-                Platform
+                Product
               </h4>
-              <ul className="space-y-2.5 text-xs font-semibold text-slate-400 list-none p-0">
-                <li><a href="#overview" className="hover:text-emerald-400 hover:translate-x-0.5 transition-all inline-block text-decoration-none">Dashboard</a></li>
-                <li><a href="#overview" className="hover:text-emerald-400 hover:translate-x-0.5 transition-all inline-block text-decoration-none">Facilities</a></li>
-                <li><a href="#modules" className="hover:text-emerald-400 hover:translate-x-0.5 transition-all inline-block text-decoration-none">AI OCR Ingestion</a></li>
-                <li><a href="#analytics" className="hover:text-emerald-400 hover:translate-x-0.5 transition-all inline-block text-decoration-none">Carbon Analytics</a></li>
-                <li><a href="#reports" className="hover:text-emerald-400 hover:translate-x-0.5 transition-all inline-block text-decoration-none">ESG Reports</a></li>
+              <ul className="space-y-2 text-xs font-semibold text-slate-400 list-none p-0">
+                <li><a href="#overview" className="hover:text-emerald-400 transition-colors text-decoration-none">Dashboard</a></li>
+                <li><a href="#overview" className="hover:text-emerald-400 transition-colors text-decoration-none">Facilities</a></li>
+                <li><a href="#modules" className="hover:text-emerald-400 transition-colors text-decoration-none">AI Ingestion</a></li>
+                <li><a href="#analytics" className="hover:text-emerald-400 transition-colors text-decoration-none">Analytics</a></li>
+                <li><a href="#reports" className="hover:text-emerald-400 transition-colors text-decoration-none">ESG Reports</a></li>
               </ul>
             </div>
 
-            {/* COLUMN 2: RESOURCES & ARCHITECTURE */}
-            <div className="space-y-3">
+            {/* COLUMN 2: RESOURCES */}
+            <div className="space-y-2.5">
               <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider block font-heading">
                 Resources
               </h4>
-              <ul className="space-y-2.5 text-xs font-semibold text-slate-400 list-none p-0">
-                <li><a href="#security" className="hover:text-emerald-400 hover:translate-x-0.5 transition-all inline-block text-decoration-none">Documentation</a></li>
-                <li><a href="#security" className="hover:text-emerald-400 hover:translate-x-0.5 transition-all inline-block text-decoration-none">Security Governance</a></li>
-                <li><a href="#technology" className="hover:text-emerald-400 hover:translate-x-0.5 transition-all inline-block text-decoration-none">Technology Stack</a></li>
-                <li><a href="#faq" className="hover:text-emerald-400 hover:translate-x-0.5 transition-all inline-block text-decoration-none">Enterprise FAQ</a></li>
-                <li><a href="#workflow" className="hover:text-emerald-400 hover:translate-x-0.5 transition-all inline-block text-decoration-none">Platform Roadmap</a></li>
+              <ul className="space-y-2 text-xs font-semibold text-slate-400 list-none p-0">
+                <li><a href="#security" className="hover:text-emerald-400 transition-colors text-decoration-none">Documentation</a></li>
+                <li><a href="#security" className="hover:text-emerald-400 transition-colors text-decoration-none">Security</a></li>
+                <li><a href="#technology" className="hover:text-emerald-400 transition-colors text-decoration-none">Tech Stack</a></li>
+                <li><a href="#faq" className="hover:text-emerald-400 transition-colors text-decoration-none">Enterprise FAQ</a></li>
               </ul>
             </div>
 
-            {/* COLUMN 3: DEVELOPERS & DATA */}
-            <div className="space-y-3">
+            {/* COLUMN 3: COMPANY */}
+            <div className="space-y-2.5">
               <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider block font-heading">
-                Developers
+                Company
               </h4>
-              <ul className="space-y-2.5 text-xs font-semibold text-slate-400 list-none p-0">
-                <li><a href="#security" className="hover:text-emerald-400 hover:translate-x-0.5 transition-all inline-block text-decoration-none">REST API Spec</a></li>
-                <li><a href="#security" className="hover:text-emerald-400 hover:translate-x-0.5 transition-all inline-block text-decoration-none">JWT Bearer Auth</a></li>
-                <li><a href="#technology" className="hover:text-emerald-400 hover:translate-x-0.5 transition-all inline-block text-decoration-none">Gemini Vision AI</a></li>
-                <li><a href="#technology" className="hover:text-emerald-400 hover:translate-x-0.5 transition-all inline-block text-decoration-none">Prisma ORM Store</a></li>
-                <li><a href="#technology" className="hover:text-emerald-400 hover:translate-x-0.5 transition-all inline-block text-decoration-none">AWS Infrastructure</a></li>
-              </ul>
-            </div>
-
-            {/* COLUMN 4: COMPANY & ACCESS */}
-            <div className="space-y-3">
-              <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider block font-heading">
-                Company & Access
-              </h4>
-              <ul className="space-y-2.5 text-xs font-semibold text-slate-400 list-none p-0">
-                <li><Link to="/login" className="hover:text-emerald-400 hover:translate-x-0.5 transition-all inline-block text-decoration-none">Account Login</Link></li>
-                <li><Link to="/signup" className="hover:text-emerald-400 hover:translate-x-0.5 transition-all inline-block text-decoration-none">Register Enterprise</Link></li>
-                <li><a href="#security" className="hover:text-emerald-400 hover:translate-x-0.5 transition-all inline-block text-decoration-none">Privacy Policy</a></li>
-                <li><a href="#security" className="hover:text-emerald-400 hover:translate-x-0.5 transition-all inline-block text-decoration-none">Terms of Service</a></li>
-                <li><a href="#security" className="hover:text-emerald-400 hover:translate-x-0.5 transition-all inline-block text-decoration-none">Cookie Preferences</a></li>
+              <ul className="space-y-2 text-xs font-semibold text-slate-400 list-none p-0">
+                <li><Link to="/login" className="hover:text-emerald-400 transition-colors text-decoration-none">Account Login</Link></li>
+                <li><Link to="/signup" className="hover:text-emerald-400 transition-colors text-decoration-none">Register</Link></li>
+                <li><a href="#security" className="hover:text-emerald-400 transition-colors text-decoration-none">Privacy Policy</a></li>
+                <li><a href="#security" className="hover:text-emerald-400 transition-colors text-decoration-none">Terms of Service</a></li>
               </ul>
             </div>
 
@@ -200,36 +142,11 @@ const LandingFooter = () => {
 
         </div>
 
-        {/* ── LAYER 4: TRUST & COMPLIANCE BADGE ROW ────────────────────────── */}
-        <div className="pt-8 border-t border-slate-800/80">
-          <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block mb-4 font-heading text-center sm:text-left">
-            Enterprise Security & Standards Compliance
-          </span>
-          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5">
-            {trustBadges.map((badge, idx) => {
-              const Icon = badge.icon;
-              return (
-                <div
-                  key={idx}
-                  className="bg-slate-900/90 border border-slate-800 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-300 flex items-center gap-2 hover:border-[#2F5241] transition-colors"
-                >
-                  <Icon className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>{badge.label}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* ── LAYER 5: MINIMAL BOTTOM LEGAL & SYSTEM STRIP ───────────────────── */}
-        <div className="pt-8 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 font-medium gap-4">
-
-          <div className="flex items-center gap-3">
+        {/* ── MINIMAL BOTTOM LEGAL & SYSTEM STRIP ───────────────────── */}
+        <div className="pt-6 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 font-medium gap-3">
+          
+          <div className="flex items-center gap-2">
             <p>© 2026 EcoAudit AI Inc. All rights reserved.</p>
-            <span className="hidden sm:inline text-slate-600">•</span>
-            <span className="hidden sm:inline text-[11px] font-bold text-emerald-400 bg-emerald-950/60 px-2.5 py-0.5 rounded-full border border-emerald-800/50">
-              v1.0.4 Enterprise
-            </span>
           </div>
 
           <div className="flex items-center gap-2 text-xs font-bold text-emerald-400">
@@ -237,12 +154,12 @@ const LandingFooter = () => {
             <span>All Systems Operational</span>
           </div>
 
-          <div className="flex items-center gap-4 text-[11px]">
-            <a href="#security" className="hover:text-white transition-colors text-decoration-none">Privacy Policy</a>
+          <div className="flex items-center gap-3 text-[11px]">
+            <a href="#security" className="hover:text-white transition-colors text-decoration-none">Privacy</a>
             <span>•</span>
-            <a href="#security" className="hover:text-white transition-colors text-decoration-none">Terms of Service</a>
+            <a href="#security" className="hover:text-white transition-colors text-decoration-none">Terms</a>
             <span>•</span>
-            <a href="#security" className="hover:text-white transition-colors text-decoration-none">Security Disclosure</a>
+            <a href="#security" className="hover:text-white transition-colors text-decoration-none">Security</a>
           </div>
 
         </div>

@@ -33,10 +33,10 @@ const ScrollToTop = () => {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.8, y: 10 }}
           onClick={scrollToTop}
-          className="fixed bottom-6 right-6 z-50 w-11 h-11 rounded-2xl bg-[#152A38] text-[#E4E5DB] flex items-center justify-center shadow-lg border border-[#2F5241]/40 hover:bg-[#2F5241] hover:text-white transition-all cursor-pointer group"
+          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-[#152A38] text-[#E4E5DB] flex items-center justify-center shadow-lg border border-[#2F5241]/40 hover:bg-[#2F5241] hover:text-white transition-all cursor-pointer group"
           title="Scroll to top"
         >
-          <ArrowUp className="w-5 h-5 group-hover:-translate-y-0.5 transition-transform" />
+          <ArrowUp className="w-4 h-4 sm:w-5 sm:h-5 group-hover:-translate-y-0.5 transition-transform" />
         </motion.button>
       )}
     </AnimatePresence>

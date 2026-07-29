@@ -72,7 +72,28 @@ const AISection = () => {
           </p>
         </div>
 
-        {/* PIPELINE PROGRESS INDICATOR BAR */}
+        {/* MOBILE STEP SELECTOR STRIP */}
+        <div className="flex lg:hidden overflow-x-auto scrollbar-none gap-2 mb-8 pb-2 justify-start px-1">
+          {steps.map((s) => {
+            const Icon = s.icon;
+            const isActive = activeStep === s.step;
+            return (
+              <button
+                key={s.step}
+                onClick={() => setActiveStep(s.step)}
+                className={`px-3 py-2 rounded-xl border transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap shrink-0 ${isActive
+                  ? "bg-[#2F5241] text-white border-emerald-400/60 shadow-md"
+                  : "bg-slate-900/80 text-slate-400 border-slate-800"
+                  }`}
+              >
+                <Icon className={`w-3.5 h-3.5 ${isActive ? "text-emerald-300" : ""}`} />
+                <span className="text-xs font-extrabold">0{s.step}. {s.title}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* PIPELINE PROGRESS INDICATOR BAR (DESKTOP) */}
         <div className="hidden lg:grid grid-cols-6 gap-3 mb-12 relative">
           <div className="absolute top-1/2 left-6 right-6 h-0.5 bg-slate-800 -translate-y-1/2 -z-10" />
           {steps.map((s) => {
@@ -108,7 +129,7 @@ const AISection = () => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="bg-slate-900/90 border border-slate-800 rounded-[32px] p-6 sm:p-10 shadow-2xl max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 items-center text-left"
+          className="bg-slate-900/90 border border-slate-800 rounded-[32px] p-5 sm:p-10 shadow-2xl max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-6 sm:gap-8 items-center text-left"
         >
           <div className="md:col-span-8 space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#2F5241]/40 text-emerald-400 text-xs font-extrabold border border-[#2F5241]">
@@ -123,9 +144,9 @@ const AISection = () => {
               {steps[activeStep - 1].detail}
             </p>
 
-            <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs font-extrabold text-emerald-400">
+            <div className="pt-3 border-t border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-extrabold text-emerald-400">
               <span>Benchmark Metric:</span>
-              <span className="text-white bg-slate-800 px-3 py-1 rounded-xl border border-slate-700">
+              <span className="text-white bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700 text-center sm:text-right">
                 {steps[activeStep - 1].metric}
               </span>
             </div>

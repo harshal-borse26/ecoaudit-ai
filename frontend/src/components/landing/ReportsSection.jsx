@@ -76,35 +76,39 @@ const ReportsSection = () => {
         </div>
 
         {/* INTERACTIVE REPORT PREVIEW CONTAINER */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start max-w-5xl mx-auto">
 
           {/* PAGE SELECTOR NAVIGATION */}
           <div className="lg:col-span-4 space-y-2 text-left">
             <span className="text-[10px] font-extrabold text-[#7A8597] uppercase tracking-wider block mb-2 px-1">
               Select Document Section
             </span>
-            {reportPages.map((p) => (
-              <button
-                key={p.page}
-                onClick={() => setActivePage(p.page)}
-                className={`w-full p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex items-center justify-between ${activePage === p.page
-                    ? "bg-[#152A38] text-[#E4E5DB] border-[#2F5241] shadow-md"
-                    : "bg-[#F7F6EE] text-[#152A38] border-[#DDDDD0] hover:bg-[#EEEDDF]"
-                  }`}
-              >
-                <div>
-                  <span className="text-[10px] font-extrabold block uppercase tracking-wide opacity-75">
-                    Section 0{p.page}
-                  </span>
-                  <span className="text-xs font-extrabold block font-heading truncate">
-                    {p.title}
-                  </span>
-                </div>
-                <ChevronRight className={`w-4 h-4 shrink-0 ${activePage === p.page ? "text-emerald-400" : "text-[#7A8597]"}`} />
-              </button>
-            ))}
+            
+            {/* HORIZONTAL SWIPE ON MOBILE / VERTICAL LIST ON DESKTOP */}
+            <div className="flex lg:flex-col overflow-x-auto scrollbar-none gap-2 pb-2 lg:pb-0">
+              {reportPages.map((p) => (
+                <button
+                  key={p.page}
+                  onClick={() => setActivePage(p.page)}
+                  className={`p-3 sm:p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex items-center justify-between shrink-0 lg:shrink min-w-[200px] lg:min-w-0 ${activePage === p.page
+                      ? "bg-[#152A38] text-[#E4E5DB] border-[#2F5241] shadow-md"
+                      : "bg-[#F7F6EE] text-[#152A38] border-[#DDDDD0] hover:bg-[#EEEDDF]"
+                    }`}
+                >
+                  <div>
+                    <span className="text-[9.5px] sm:text-[10px] font-extrabold block uppercase tracking-wide opacity-75">
+                      Section 0{p.page}
+                    </span>
+                    <span className="text-xs font-extrabold block font-heading truncate">
+                      {p.title}
+                    </span>
+                  </div>
+                  <ChevronRight className={`w-4 h-4 shrink-0 hidden sm:block ${activePage === p.page ? "text-emerald-400" : "text-[#7A8597]"}`} />
+                </button>
+              ))}
+            </div>
 
-            <div className="pt-4">
+            <div className="pt-2 sm:pt-4 hidden sm:block">
               <div className="bg-[#EEEDDF] p-4 rounded-2xl border border-[#DDDDD0] space-y-2">
                 <div className="flex items-center gap-2 text-[#2F5241] text-xs font-extrabold">
                   <FileCheck className="w-4 h-4" />
@@ -126,12 +130,12 @@ const ReportsSection = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.98 }}
                 transition={{ duration: 0.25 }}
-                className="bg-white rounded-[28px] p-6 sm:p-8 border border-[#DDDDD0] shadow-xl text-left space-y-5 relative"
+                className="bg-white rounded-[28px] p-4 sm:p-8 border border-[#DDDDD0] shadow-xl text-left space-y-5 relative"
               >
                 {/* WATERMARK BADGE */}
-                <div className="flex items-center justify-between pb-4 border-b border-[#DDDDD0]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-[#DDDDD0]">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-lg bg-[#152A38] text-emerald-400 flex items-center justify-center text-xs font-extrabold">
+                    <div className="w-7 h-7 rounded-lg bg-[#152A38] text-emerald-400 flex items-center justify-center text-xs font-extrabold shrink-0">
                       EA
                     </div>
                     <div>
@@ -144,7 +148,7 @@ const ReportsSection = () => {
                     </div>
                   </div>
 
-                  <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-extrabold border border-emerald-200">
+                  <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-extrabold border border-emerald-200 self-start sm:self-auto">
                     Audit Verified
                   </span>
                 </div>
@@ -159,9 +163,9 @@ const ReportsSection = () => {
                   </p>
                 </div>
 
-                {/* SAMPLE DATA TABLE */}
-                <div className="bg-[#F7F6EE] rounded-2xl border border-[#DDDDD0] overflow-hidden">
-                  <table className="w-full text-left text-xs">
+                {/* SAMPLE DATA TABLE WITH TOUCH SCROLL */}
+                <div className="bg-[#F7F6EE] rounded-2xl border border-[#DDDDD0] overflow-x-auto">
+                  <table className="w-full text-left text-xs min-w-[420px]">
                     <thead className="bg-[#EEEDDF] text-[10px] font-extrabold text-[#7A8597] uppercase tracking-wider border-b border-[#DDDDD0]">
                       <tr>
                         <th className="p-3">Disclosure Metric</th>
