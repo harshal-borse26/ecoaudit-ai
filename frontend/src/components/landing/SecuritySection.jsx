@@ -38,12 +38,12 @@ const SecuritySection = () => {
 
   return (
     <section id="security" className="py-16 sm:py-24 bg-[#152A38] text-[#E4E5DB] relative overflow-hidden border-b border-[#2F5241]/40">
-      
+
       {/* SOFT GLOW */}
       <div className="absolute top-0 right-1/4 w-[500px] h-[350px] bg-[#2F5241]/20 rounded-full blur-[140px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        
+
         {/* SECTION HEADER */}
         <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
           <span className="px-3 py-1 rounded-full bg-[#2F5241] text-emerald-300 text-xs font-extrabold inline-flex items-center gap-1.5 border border-emerald-400/30">

@@ -24,7 +24,7 @@ const ProblemSection = () => {
   return (
     <section className="py-16 sm:py-24 bg-[#E4E5DB]/30 border-b border-[#DDDDD0]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         {/* SECTION HEADER */}
         <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
           <span className="text-xs font-extrabold text-[#2F5241] uppercase tracking-wider block font-heading">
@@ -40,7 +40,7 @@ const ProblemSection = () => {
 
         {/* COMPARISON CARDS GRID */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
-          
+
           {/* LEFT: LEGACY WORKFLOW */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}

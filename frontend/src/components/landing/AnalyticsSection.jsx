@@ -10,7 +10,7 @@ const AnalyticsSection = () => {
   return (
     <section id="analytics" className="py-16 sm:py-24 bg-[#F7F6EE] border-b border-[#DDDDD0]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         {/* SECTION HEADER */}
         <div className="text-center max-w-3xl mx-auto mb-14 space-y-3">
           <span className="text-xs font-extrabold text-[#2F5241] uppercase tracking-wider block font-heading">
@@ -26,7 +26,7 @@ const AnalyticsSection = () => {
 
         {/* DEMO CHART CARD (MATCHING CARBON TREND CHART SECTION UI) */}
         <div className="dash-card bg-[#F7F6EE] border border-[#DDDDD0] rounded-[32px] p-5 sm:p-8 shadow-[0_20px_60px_rgba(21,42,56,0.08)] max-w-5xl mx-auto text-left space-y-5">
-          
+
           {/* CARD HEADER */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#DDDDD0]">
             <div className="flex items-center gap-3">
@@ -58,11 +58,10 @@ const AnalyticsSection = () => {
                   <button
                     key={range}
                     onClick={() => setTimeRange(range)}
-                    className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                      timeRange === range
+                    className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${timeRange === range
                         ? "bg-[#2F5241] text-[#E4E5DB] shadow-xs"
                         : "text-[#7A8597] hover:text-[#152A38]"
-                    }`}
+                      }`}
                   >
                     {range}
                   </button>
@@ -75,11 +74,10 @@ const AnalyticsSection = () => {
                   <button
                     key={g}
                     onClick={() => setGranularity(g)}
-                    className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                      granularity === g
+                    className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${granularity === g
                         ? "bg-[#152A38] text-white shadow-xs"
                         : "text-[#7A8597] hover:text-[#152A38]"
-                    }`}
+                      }`}
                   >
                     {g}
                   </button>
@@ -90,11 +88,10 @@ const AnalyticsSection = () => {
             {/* ROLLING AVG TOGGLE */}
             <button
               onClick={() => setShowRollingAvg(!showRollingAvg)}
-              className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer ${
-                showRollingAvg
+              className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer ${showRollingAvg
                   ? "bg-[#2F5241]/10 text-[#2F5241] border-[#2F5241]/30 font-extrabold"
                   : "bg-[#F7F6EE] text-[#7A8597] border-[#DDDDD0]"
-              }`}
+                }`}
             >
               <Layers className="w-3.5 h-3.5" />
               <span>Rolling Avg</span>
@@ -160,7 +157,7 @@ const AnalyticsSection = () => {
 
               {/* Area & Main Curve */}
               <path d="M 60 170 Q 230 40 400 130 T 750 70 L 750 200 L 60 200 Z" fill="url(#landingTrendAreaGrad)" />
-              
+
               {showRollingAvg && (
                 <path d="M 60 160 Q 230 60 400 120 T 750 85" fill="none" stroke="#B45309" strokeWidth="1.8" strokeDasharray="5 4" opacity="0.8" />
               )}

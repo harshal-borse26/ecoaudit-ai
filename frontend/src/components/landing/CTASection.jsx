@@ -11,9 +11,9 @@ const CTASection = () => {
   return (
     <section className="py-16 sm:py-24 bg-[#E4E5DB]/40 relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         <div className="dash-card bg-[#152A38] text-[#E4E5DB] rounded-[36px] p-8 sm:p-14 border border-[#2F5241]/50 relative overflow-hidden text-center shadow-2xl space-y-6">
-          
+
           {/* AMBIENT SOFT GREEN GLOW */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-[#2F5241]/25 rounded-full blur-[140px] pointer-events-none" />
 

@@ -6,7 +6,7 @@ import { Leaf, Sparkles } from "lucide-react";
 const AuthLayout = ({ children, title, subtitle, maxWidth = "max-w-[420px]" }) => {
   return (
     <div className="min-h-screen w-full bg-slate-100 md:bg-gradient-to-br md:from-[#EBF5EE] md:via-[#F1F5F9] md:to-[#E8F3F1] flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 py-8 sm:py-10 font-sans antialiased text-[#1E293B] selection:bg-[#2E7D32]/10 selection:text-[#2E7D32] relative">
-      
+
       {/* SUBTLE BACKGROUND AMBIENT GLOW BLOBS */}
       <div className="absolute top-0 left-1/4 w-[450px] h-[450px] bg-emerald-300/15 rounded-full blur-[130px] pointer-events-none -translate-y-1/2" />
       <div className="absolute bottom-0 right-1/4 w-[450px] h-[450px] bg-teal-300/15 rounded-full blur-[130px] pointer-events-none translate-y-1/2" />
@@ -18,10 +18,10 @@ const AuthLayout = ({ children, title, subtitle, maxWidth = "max-w-[420px]" }) =
         transition={{ duration: 0.4, ease: "easeOut" }}
         className="w-full max-w-[1040px] bg-white rounded-[28px] sm:rounded-[32px] shadow-[0_20px_60px_rgba(15,23,42,0.1)] border border-[#E2E8F0] p-4 sm:p-6 lg:p-7 flex flex-col lg:flex-row gap-6 lg:gap-8 items-stretch relative overflow-hidden my-auto"
       >
-        
+
         {/* LEFT PANEL - FORM AREA */}
         <div className="w-full lg:w-[50%] xl:w-[48%] flex flex-col justify-between p-2 sm:p-4 lg:p-5">
-          
+
           <div>
             {/* TOP LOGO */}
             <div className="mb-5 sm:mb-6">
@@ -67,7 +67,7 @@ const AuthLayout = ({ children, title, subtitle, maxWidth = "max-w-[420px]" }) =
 
         {/* RIGHT PANEL - HERO SHOWCASE */}
         <div className="hidden lg:flex lg:w-[50%] xl:w-[52%] bg-[#0A0F1D] rounded-[24px] sm:rounded-[26px] p-6 xl:p-8 text-white flex-col justify-between items-center text-center relative overflow-hidden shadow-xl border border-slate-800/80 self-stretch min-h-[500px]">
-          
+
           {/* AMBIENT SOFT RADIAL GREEN GLOW BEHIND CHARACTER */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-emerald-500/15 rounded-full blur-[90px] pointer-events-none" />
 

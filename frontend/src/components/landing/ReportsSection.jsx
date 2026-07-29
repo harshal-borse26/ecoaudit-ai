@@ -61,7 +61,7 @@ const ReportsSection = () => {
   return (
     <section id="reports" className="py-16 sm:py-24 bg-[#E4E5DB]/30 border-b border-[#DDDDD0]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         {/* SECTION HEADER */}
         <div className="text-center max-w-3xl mx-auto mb-14 space-y-3">
           <span className="text-xs font-extrabold text-[#2F5241] uppercase tracking-wider block font-heading">
@@ -77,7 +77,7 @@ const ReportsSection = () => {
 
         {/* INTERACTIVE REPORT PREVIEW CONTAINER */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start max-w-5xl mx-auto">
-          
+
           {/* PAGE SELECTOR NAVIGATION */}
           <div className="lg:col-span-4 space-y-2 text-left">
             <span className="text-[10px] font-extrabold text-[#7A8597] uppercase tracking-wider block mb-2 px-1">
@@ -87,11 +87,10 @@ const ReportsSection = () => {
               <button
                 key={p.page}
                 onClick={() => setActivePage(p.page)}
-                className={`w-full p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex items-center justify-between ${
-                  activePage === p.page
+                className={`w-full p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex items-center justify-between ${activePage === p.page
                     ? "bg-[#152A38] text-[#E4E5DB] border-[#2F5241] shadow-md"
                     : "bg-[#F7F6EE] text-[#152A38] border-[#DDDDD0] hover:bg-[#EEEDDF]"
-                }`}
+                  }`}
               >
                 <div>
                   <span className="text-[10px] font-extrabold block uppercase tracking-wide opacity-75">

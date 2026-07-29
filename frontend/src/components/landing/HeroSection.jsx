@@ -1,16 +1,16 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Sparkles, 
-  ArrowRight, 
-  TrendingUp, 
-  Building2, 
-  FileText, 
-  Zap, 
-  CheckCircle2, 
-  ShieldCheck, 
-  Layers, 
+import {
+  Sparkles,
+  ArrowRight,
+  TrendingUp,
+  Building2,
+  FileText,
+  Zap,
+  CheckCircle2,
+  ShieldCheck,
+  Layers,
   BarChart3,
   Activity,
   Award,
@@ -33,7 +33,7 @@ const HeroSection = () => {
   };
 
   return (
-    <section 
+    <section
       onMouseMove={handleMouseMove}
       className="relative pt-32 sm:pt-36 lg:pt-40 pb-16 lg:pb-28 overflow-hidden bg-[#E4E5DB]/30 border-b border-[#DDDDD0]"
     >
@@ -43,10 +43,10 @@ const HeroSection = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
-          
+
           {/* ── LEFT COLUMN: ENTERPRISE COPY & CTAS ────────────────────── */}
           <div className="lg:col-span-6 text-left space-y-6">
-            
+
             {/* ENTERPRISE BADGE */}
             <motion.div
               initial={{ opacity: 0, y: 12 }}
@@ -59,7 +59,7 @@ const HeroSection = () => {
                 AI-Powered Scope 1 & 2 Carbon Intelligence
               </span>
             </motion.div>
- 
+
             {/* POWERFUL HEADLINE WITH CLEAN TYPOGRAPHY */}
             <motion.h1
               initial={{ opacity: 0, y: 16 }}
@@ -148,7 +148,7 @@ const HeroSection = () => {
               }}
               className="dash-card bg-white border border-[#DDDDD0] rounded-[32px] p-6 sm:p-7 shadow-[0_20px_50px_rgba(21,42,56,0.08)] relative transition-transform duration-200"
             >
-              
+
               {/* TOP APPLICATION HEADER BAR */}
               <div className="flex items-center justify-between pb-4 mb-4 border-b border-[#DDDDD0]">
                 <div className="flex items-center gap-2.5">
@@ -170,11 +170,10 @@ const HeroSection = () => {
                     <button
                       key={t}
                       onClick={() => setActiveTab(t)}
-                      className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold transition-all cursor-pointer uppercase ${
-                        activeTab === t
+                      className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold transition-all cursor-pointer uppercase ${activeTab === t
                           ? "bg-[#152A38] text-[#E4E5DB] shadow-2xs"
                           : "bg-[#EEEDDF] text-[#7A8597] hover:text-[#152A38]"
-                      }`}
+                        }`}
                     >
                       {t}
                     </button>
@@ -215,7 +214,7 @@ const HeroSection = () => {
                         <span>Carbon Emission Analytics</span>
                         <span className="text-[#2F5241] font-extrabold">TARGET: 14,200 kg</span>
                       </div>
-                      
+
                       <svg viewBox="0 0 400 120" className="w-full h-auto">
                         <defs>
                           <linearGradient id="heroGrad" x1="0" y1="0" x2="0" y2="1">
@@ -308,9 +307,8 @@ const HeroSection = () => {
                 onClick={() => setActiveTab("ocr")}
                 animate={{ y: [-3, 3, -3] }}
                 transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                className={`absolute -top-7 left-4 bg-white p-3 rounded-2xl border shadow-md flex items-center gap-2.5 z-30 text-left cursor-pointer transition-all ${
-                  activeTab === "ocr" ? "border-amber-500 ring-2 ring-amber-200" : "border-[#DDDDD0] hover:border-amber-400"
-                }`}
+                className={`absolute -top-7 left-4 bg-white p-3 rounded-2xl border shadow-md flex items-center gap-2.5 z-30 text-left cursor-pointer transition-all ${activeTab === "ocr" ? "border-amber-500 ring-2 ring-amber-200" : "border-[#DDDDD0] hover:border-amber-400"
+                  }`}
               >
                 <div className="w-7 h-7 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center shrink-0">
                   <Zap className="w-3.5 h-3.5" />
@@ -330,9 +328,8 @@ const HeroSection = () => {
                 onClick={() => setActiveTab("facility")}
                 animate={{ y: [3, -3, 3] }}
                 transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                className={`absolute -bottom-6 right-4 bg-white p-3 rounded-2xl border shadow-md flex items-center gap-2.5 z-30 text-left cursor-pointer transition-all ${
-                  activeTab === "facility" ? "border-emerald-500 ring-2 ring-emerald-200" : "border-[#DDDDD0] hover:border-emerald-400"
-                }`}
+                className={`absolute -bottom-6 right-4 bg-white p-3 rounded-2xl border shadow-md flex items-center gap-2.5 z-30 text-left cursor-pointer transition-all ${activeTab === "facility" ? "border-emerald-500 ring-2 ring-emerald-200" : "border-[#DDDDD0] hover:border-emerald-400"
+                  }`}
               >
                 <div className="w-7 h-7 rounded-xl bg-emerald-50 text-[#2E7D32] border border-emerald-200 flex items-center justify-center shrink-0">
                   <Building2 className="w-3.5 h-3.5" />
@@ -352,9 +349,8 @@ const HeroSection = () => {
                 onClick={() => setActiveTab("report")}
                 animate={{ y: [-4, 4, -4] }}
                 transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
-                className={`absolute top-1/2 -right-6 sm:-right-8 hidden sm:flex bg-[#152A38] text-[#E4E5DB] p-3 rounded-2xl border shadow-xl items-center gap-2.5 z-30 text-left cursor-pointer transition-all ${
-                  activeTab === "report" ? "border-emerald-400 ring-2 ring-emerald-400/30" : "border-[#2F5241]/40 hover:border-emerald-400"
-                }`}
+                className={`absolute top-1/2 -right-6 sm:-right-8 hidden sm:flex bg-[#152A38] text-[#E4E5DB] p-3 rounded-2xl border shadow-xl items-center gap-2.5 z-30 text-left cursor-pointer transition-all ${activeTab === "report" ? "border-emerald-400 ring-2 ring-emerald-400/30" : "border-[#2F5241]/40 hover:border-emerald-400"
+                  }`}
               >
                 <div className="w-7 h-7 rounded-xl bg-[#2F5241] text-emerald-300 flex items-center justify-center shrink-0">
                   <FileText className="w-3.5 h-3.5" />

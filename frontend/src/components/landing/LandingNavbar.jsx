@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Leaf, 
-  ArrowRight, 
-  Menu, 
-  X, 
-  LayoutDashboard, 
-  Layers, 
-  ShieldCheck, 
-  Cpu, 
-  FileText, 
+import {
+  Leaf,
+  ArrowRight,
+  Menu,
+  X,
+  LayoutDashboard,
+  Layers,
+  ShieldCheck,
+  Cpu,
+  FileText,
   HelpCircle,
   Code
 } from "lucide-react";
@@ -68,17 +68,16 @@ const LandingNavbar = () => {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
           ? "bg-[#F7F6EE]/94 backdrop-blur-2xl border-b border-[#DDDDD0] shadow-md py-3"
           : "bg-transparent py-5 sm:py-6"
-      }`}
+        }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-        
+
         {/* ── ZONE 1: BRAND IDENTITY (LEFT) ────────────────────────────── */}
         <Link to="/" className="inline-flex items-center gap-3 group text-decoration-none lg:pl-3">
-          <motion.div 
+          <motion.div
             whileHover={{ scale: 1.08, rotate: 5 }}
             whileTap={{ scale: 0.96 }}
             transition={{ type: "spring", stiffness: 400, damping: 20 }}
@@ -105,9 +104,8 @@ const LandingNavbar = () => {
                 key={item.id}
                 href={item.href}
                 onClick={() => setActiveSection(item.id)}
-                className={`relative px-4 py-2 rounded-full text-sm font-semibold transition-colors cursor-pointer text-decoration-none flex items-center gap-1.5 ${
-                  isActive ? "text-[#E4E5DB] font-bold" : "text-[#152A38]/80 hover:text-[#152A38]"
-                }`}
+                className={`relative px-4 py-2 rounded-full text-sm font-semibold transition-colors cursor-pointer text-decoration-none flex items-center gap-1.5 ${isActive ? "text-[#E4E5DB] font-bold" : "text-[#152A38]/80 hover:text-[#152A38]"
+                  }`}
               >
                 {isActive && (
                   <motion.div
@@ -206,11 +204,10 @@ const LandingNavbar = () => {
                       setActiveSection(item.id);
                       setMobileMenuOpen(false);
                     }}
-                    className={`p-3.5 rounded-2xl text-base font-extrabold font-heading flex items-center justify-between text-decoration-none transition-all ${
-                      isActive 
-                        ? "bg-[#2F5241] text-white shadow-md border border-emerald-400/40" 
+                    className={`p-3.5 rounded-2xl text-base font-extrabold font-heading flex items-center justify-between text-decoration-none transition-all ${isActive
+                        ? "bg-[#2F5241] text-white shadow-md border border-emerald-400/40"
                         : "text-slate-300 hover:bg-slate-800/80"
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center gap-3">
                       <Icon className={`w-5 h-5 ${isActive ? "text-emerald-300" : "text-slate-400"}`} />

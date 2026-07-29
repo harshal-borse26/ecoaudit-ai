@@ -35,7 +35,7 @@ const FAQSection = () => {
   return (
     <section id="faq" className="py-16 sm:py-24 bg-[#F7F6EE] border-b border-[#DDDDD0]">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-left">
-        
+
         {/* SECTION HEADER */}
         <div className="text-center max-w-2xl mx-auto mb-14 space-y-3">
           <span className="text-xs font-extrabold text-[#2F5241] uppercase tracking-wider block font-heading">
@@ -65,9 +65,8 @@ const FAQSection = () => {
                   <span className="text-xs sm:text-sm font-extrabold text-[#152A38] font-heading pr-4">
                     {faq.q}
                   </span>
-                  <div className={`w-7 h-7 rounded-xl bg-[#F7F6EE] border border-[#DDDDD0] flex items-center justify-center text-[#152A38] shrink-0 transition-transform ${
-                    isOpen ? "rotate-180 bg-[#152A38] text-white" : ""
-                  }`}>
+                  <div className={`w-7 h-7 rounded-xl bg-[#F7F6EE] border border-[#DDDDD0] flex items-center justify-center text-[#152A38] shrink-0 transition-transform ${isOpen ? "rotate-180 bg-[#152A38] text-white" : ""
+                    }`}>
                     <ChevronDown className="w-4 h-4" />
                   </div>
                 </button>

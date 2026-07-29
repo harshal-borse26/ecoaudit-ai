@@ -52,12 +52,12 @@ const AISection = () => {
 
   return (
     <section className="py-16 sm:py-24 bg-[#152A38] text-[#E4E5DB] relative overflow-hidden border-b border-[#2F5241]/40">
-      
+
       {/* AMBIENT SOFT GLOW */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-[#2F5241]/20 rounded-full blur-[140px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        
+
         {/* SECTION HEADER */}
         <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
           <span className="px-3.5 py-1 rounded-full bg-[#2F5241] text-emerald-300 text-xs font-extrabold inline-flex items-center gap-1.5 shadow-xs">
@@ -82,15 +82,13 @@ const AISection = () => {
               <button
                 key={s.step}
                 onClick={() => setActiveStep(s.step)}
-                className={`p-3 rounded-2xl border transition-all cursor-pointer flex flex-col items-center text-center ${
-                  isActive
-                    ? "bg-[#2F5241] text-white border-emerald-400/60 shadow-lg scale-105"
-                    : "bg-slate-900/80 text-slate-400 border-slate-800 hover:border-slate-700"
-                }`}
+                className={`p-3 rounded-2xl border transition-all cursor-pointer flex flex-col items-center text-center ${isActive
+                  ? "bg-[#2F5241] text-white border-emerald-400/60 shadow-lg scale-105"
+                  : "bg-slate-900/80 text-slate-400 border-slate-800 hover:border-slate-700"
+                  }`}
               >
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center mb-2 ${
-                  isActive ? "bg-emerald-400 text-[#152A38]" : "bg-slate-800 text-slate-300"
-                }`}>
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center mb-2 ${isActive ? "bg-emerald-400 text-[#152A38]" : "bg-slate-800 text-slate-300"
+                  }`}>
                   <Icon className="w-4 h-4" />
                 </div>
                 <span className="text-[11px] font-extrabold block leading-tight">
@@ -116,7 +114,7 @@ const AISection = () => {
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#2F5241]/40 text-emerald-400 text-xs font-extrabold border border-[#2F5241]">
               <span>Stage 0{activeStep} of 06</span>
             </div>
-            
+
             <h3 className="text-xl sm:text-2xl font-extrabold text-white font-heading">
               {steps[activeStep - 1].title}
             </h3>

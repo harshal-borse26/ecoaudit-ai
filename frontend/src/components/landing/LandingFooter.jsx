@@ -1,18 +1,18 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { 
-  Leaf, 
-  ArrowRight, 
-  ShieldCheck, 
-  CheckCircle2, 
-  Sparkles, 
-  ExternalLink, 
-  Cpu, 
-  Lock, 
-  Database, 
-  Globe, 
-  Check 
+import {
+  Leaf,
+  ArrowRight,
+  ShieldCheck,
+  CheckCircle2,
+  Sparkles,
+  ExternalLink,
+  Cpu,
+  Lock,
+  Database,
+  Globe,
+  Check
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 
@@ -31,14 +31,14 @@ const LandingFooter = () => {
 
   return (
     <footer className="bg-[#152A38] text-[#E4E5DB] relative overflow-hidden pt-16 pb-12 border-t border-[#2F5241]/40 text-left">
-      
+
       {/* SOFT AMBIENT BACKGROUND GLOWS */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[#2F5241]/15 rounded-full blur-[160px] pointer-events-none -z-0" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-16">
-        
+
         {/* ── LAYER 1: ENTERPRISE CTA CONVERSION CARD ─────────────────────── */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -95,10 +95,10 @@ const LandingFooter = () => {
 
         {/* ── LAYER 2 & 3: BRAND STORYTELLING & PRODUCT NAVIGATION ─────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 pt-4">
-          
+
           {/* LEFT: BRAND STORYTELLING & TRUST CHECKLIST */}
           <div className="lg:col-span-4 space-y-6">
-            
+
             {/* LOGO & TYPOGRAPHY */}
             <Link to="/" className="inline-flex items-center gap-3 group text-decoration-none">
               <div className="w-10 h-10 rounded-xl bg-[#2F5241] text-[#E4E5DB] flex items-center justify-center shadow-xs border border-[#2F5241]/40">
@@ -139,7 +139,7 @@ const LandingFooter = () => {
 
           {/* RIGHT: STRUCTURED NAVIGATION COLUMNS (4 COLUMNS) */}
           <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-8">
-            
+
             {/* COLUMN 1: PLATFORM */}
             <div className="space-y-3">
               <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider block font-heading">
@@ -223,7 +223,7 @@ const LandingFooter = () => {
 
         {/* ── LAYER 5: MINIMAL BOTTOM LEGAL & SYSTEM STRIP ───────────────────── */}
         <div className="pt-8 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 font-medium gap-4">
-          
+
           <div className="flex items-center gap-3">
             <p>© 2026 EcoAudit AI Inc. All rights reserved.</p>
             <span className="hidden sm:inline text-slate-600">•</span>

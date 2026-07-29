@@ -1,15 +1,15 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  LayoutDashboard, 
-  Building2, 
-  Receipt, 
-  FileSpreadsheet, 
-  UserCheck, 
-  TrendingUp, 
-  Zap, 
-  Sparkles, 
-  CheckCircle2, 
+import {
+  LayoutDashboard,
+  Building2,
+  Receipt,
+  FileSpreadsheet,
+  UserCheck,
+  TrendingUp,
+  Zap,
+  Sparkles,
+  CheckCircle2,
   AlertCircle,
   FileText
 } from "lucide-react";
@@ -28,7 +28,7 @@ const PlatformOverview = () => {
   return (
     <section id="overview" className="py-16 sm:py-24 bg-[#F7F6EE] border-b border-[#DDDDD0]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         {/* SECTION HEADER */}
         <div className="text-center max-w-3xl mx-auto mb-12 space-y-3">
           <span className="text-xs font-extrabold text-[#2F5241] uppercase tracking-wider block font-heading">
@@ -52,11 +52,10 @@ const PlatformOverview = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
-                    isActive
+                  className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${isActive
                       ? "bg-[#152A38] text-[#E4E5DB] shadow-sm"
                       : "text-[#7A8597] hover:text-[#152A38]"
-                  }`}
+                    }`}
                 >
                   <Icon className={`w-4 h-4 ${isActive ? "text-emerald-400" : ""}`} />
                   <span>{tab.label}</span>
@@ -69,7 +68,7 @@ const PlatformOverview = () => {
         {/* INTERACTIVE DEMO CANVAS */}
         <div className="dash-card bg-[#F7F6EE] border border-[#DDDDD0] rounded-[32px] p-5 sm:p-8 shadow-[0_20px_60px_rgba(21,42,56,0.08)] min-h-[460px] flex flex-col justify-between">
           <AnimatePresence mode="wait">
-            
+
             {/* VIEW 1: DASHBOARD */}
             {activeTab === "dashboard" && (
               <motion.div
